@@ -3,3 +3,6 @@ venv/
 
 # pycache
 __pycache__/
+
+# data
+data/globalterrorism_1970_2017.csv

@@ -6,6 +6,9 @@ from .ids import CHOROPLETH_MAP_ID, YEAR_DROPDOWN_ID
 
 
 def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
+    """Registers all callbacks for the Dash app."""
+
+    # Update choropleth map
     @app.callback(
         Output(CHOROPLETH_MAP_ID, "figure"),
         Input(YEAR_DROPDOWN_ID, "value"),
