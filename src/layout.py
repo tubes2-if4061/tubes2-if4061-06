@@ -1,26 +1,22 @@
-from dash import dcc, html
+from dash import html
 import pandas as pd
 
 from .components.filter import filter_component
 from .components.title import title_component
-from .ids import CHOROPLETH_MAP_ID
+from .ids import MAPS_CONTAINER_ID
 
 
 def create_layout(data: pd.DataFrame) -> html.Div:
     return html.Div(
+        className="app-shell",
         children=[
             html.Div(
+                className="dashboard",
                 children=[
                     title_component(),
                     filter_component(data),
-                    dcc.Graph(id=CHOROPLETH_MAP_ID),
+                    html.Div(id=MAPS_CONTAINER_ID, className="maps-container"),
                 ],
-                style={
-                    "padding": "0px",
-                },
             )
         ],
-        style={
-            "backgroundColor": "#ffffff",
-        },
     )

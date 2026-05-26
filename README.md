@@ -32,5 +32,5 @@ pip install -r requirements.txt
 
 4. Run the application
 ```bash
-python run app.py
+python -m src.app
 ```

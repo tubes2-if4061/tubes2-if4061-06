@@ -1,6 +1,5 @@
 import pandas as pd
-import plotly.express as px
 
 
-def load_gapminder_data() -> pd.DataFrame:
-    return px.data.gapminder()
+def load_terrorism_data(file_path: str = "data/data.csv") -> pd.DataFrame:
+    return pd.read_csv(file_path)

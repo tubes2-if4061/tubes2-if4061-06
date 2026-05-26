@@ -10,7 +10,8 @@ REMOVE_BODY_MARGIN = """
             html, body {
                 margin: 0;
                 padding: 0;
-                background-color: #ffffff;
+                background-color: #171918;
+                color: #f2f0ee;
             }
         </style>
     </head>
