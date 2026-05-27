@@ -1,6 +1,11 @@
 MODE_FILTER_ID = "mode-filter"
 COMPARE_COUNT_FILTER_ID = "compare-count-filter"
+SINGLE_YEAR_MODE_FILTER_ID = "single-year-mode-filter"
+SINGLE_YEAR_MODE_CONTROL_ID = "single-year-mode-control"
+SINGLE_YEAR_SLIDER_ID = "single-year-slider"
+SINGLE_YEAR_SLIDER_ROW_ID = "single-year-slider-row"
 YEAR_RANGE_CONTAINER_ID = "year-range-container"
+YEAR_RANGE_ERROR_ID = "year-range-error"
 MAPS_CONTAINER_ID = "maps-container"
 APPLY_FILTERS_BUTTON_ID = "apply-filters-button"
 
