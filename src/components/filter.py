@@ -2,9 +2,11 @@ from dash import dcc, html
 import pandas as pd
 
 from ..ids import (
-    APPLY_FILTERS_BUTTON_ID,
     COMPARE_COUNT_FILTER_ID,
+    COMPARE_YEAR_SLIDER_IDS,
+    COMPARE_YEAR_SLIDER_ROW_IDS,
     MODE_FILTER_ID,
+    PERIOD_CONTROLS_GRID_ID,
     SINGLE_YEAR_MODE_CONTROL_ID,
     SINGLE_YEAR_MODE_FILTER_ID,
     SINGLE_YEAR_SLIDER_ID,
@@ -14,6 +16,33 @@ from ..ids import (
     YEAR_RANGE_ROW_IDS,
     YEAR_RANGE_START_IDS,
 )
+
+
+DEFAULT_COMPARE_YEAR_RANGES = [
+    (1970, 1979),
+    (1980, 1989),
+    (1990, 1999),
+    (2000, 2017),
+]
+COMPARE_YEAR_RANGE_DEFAULTS = {
+    2: [
+        (1970, 1999),
+        (2000, 2017),
+        (1990, 1999),
+        (2000, 2017),
+    ],
+    3: [
+        (1970, 1984),
+        (1985, 1999),
+        (2000, 2017),
+        (2000, 2017),
+    ],
+    4: DEFAULT_COMPARE_YEAR_RANGES,
+}
+COMPARE_YEAR_DEFAULTS = {
+    compare_count: [start_year for start_year, _end_year in year_ranges]
+    for compare_count, year_ranges in COMPARE_YEAR_RANGE_DEFAULTS.items()
+}
 
 
 def year_dropdown(dropdown_id: str, years: list[int], value: int) -> dcc.Input:
@@ -31,11 +60,12 @@ def year_range_row(
     years: list[int],
     default_start_year: int,
     default_end_year: int,
+    is_visible: bool,
 ) -> html.Div:
     return html.Div(
         id=YEAR_RANGE_ROW_IDS[row_index],
         className="year-range-row",
-        style={"display": "grid"} if row_index == 0 else {"display": "none"},
+        style={"display": "grid"} if is_visible else {"display": "none"},
         children=[
             html.Div(f"Range {row_index + 1}", className="range-label"),
             html.Label(
@@ -76,7 +106,7 @@ def slider_marks(years: list[int]) -> dict[int, str]:
 def single_year_slider_row(years: list[int], default_year: int) -> html.Div:
     return html.Div(
         id=SINGLE_YEAR_SLIDER_ROW_ID,
-        className="year-slider-row",
+        className="year-slider-row single-year-slider-row",
         style={"display": "none"},
         children=[
             html.Div("Year", className="range-label"),
@@ -101,11 +131,39 @@ def single_year_slider_row(years: list[int], default_year: int) -> html.Div:
     )
 
 
-def filter_component(df: pd.DataFrame) -> html.Div:
-    years = [int(year) for year in sorted(df["year"].unique())]
-    default_start_year = years[0]
-    default_end_year = years[-1]
+def compare_year_slider_row(
+    row_index: int,
+    years: list[int],
+    default_year: int,
+) -> html.Div:
+    return html.Div(
+        id=COMPARE_YEAR_SLIDER_ROW_IDS[row_index],
+        className="year-slider-row compare-year-slider-row",
+        style={"display": "none"},
+        children=[
+            # html.Div(f"Map {row_index + 1}", className="range-label"),
+            html.Div(
+                className="year-slider-wrap",
+                children=[
+                    dcc.Slider(
+                        id=COMPARE_YEAR_SLIDER_IDS[row_index],
+                        min=years[0],
+                        max=years[-1],
+                        step=1,
+                        value=default_year,
+                        marks=slider_marks(years),
+                        included=False,
+                        updatemode="drag",
+                        tooltip={"placement": "bottom", "always_visible": False},
+                        className="year-slider",
+                    )
+                ],
+            ),
+        ],
+    )
 
+
+def filter_component(df: pd.DataFrame) -> html.Div:
     return html.Div(
         className="filter-panel",
         children=[
@@ -132,7 +190,7 @@ def filter_component(df: pd.DataFrame) -> html.Div:
                     html.Div(
                         id="compare-count-control",
                         className="compare-count-control",
-                        style={"display": "none"},
+                        style={"display": "grid"},
                         children=[
                             html.Label("Maps", className="filter-label"),
                             dcc.RadioItems(
@@ -142,7 +200,7 @@ def filter_component(df: pd.DataFrame) -> html.Div:
                                     {"label": "3", "value": 3},
                                     {"label": "4", "value": 4},
                                 ],
-                                value=3,
+                                value=4,
                                 className="compare-count-filter",
                                 inputClassName="compare-count-input",
                                 labelClassName="compare-count-option",
@@ -169,18 +227,43 @@ def filter_component(df: pd.DataFrame) -> html.Div:
                     ),
                 ],
             ),
+        ],
+    )
+
+
+def period_controls_component(df: pd.DataFrame) -> html.Div:
+    years = [int(year) for year in sorted(df["year"].unique())]
+    default_start_year = years[0]
+
+    return html.Div(
+        className="period-controls",
+        children=[
             html.Div(
-                className="year-ranges",
+                id=PERIOD_CONTROLS_GRID_ID,
+                className="year-ranges period-controls-grid period-controls-grid-4",
                 children=[
                     single_year_slider_row(years, default_start_year),
+                    *[
+                        compare_year_slider_row(
+                            row_index,
+                            years,
+                            default_year,
+                        )
+                        for row_index, default_year in enumerate(
+                            COMPARE_YEAR_DEFAULTS[4]
+                        )
+                    ],
                     *[
                         year_range_row(
                             row_index,
                             years,
-                            default_start_year,
-                            default_end_year,
+                            start_year,
+                            end_year,
+                            is_visible=True,
                         )
-                        for row_index in range(4)
+                        for row_index, (start_year, end_year) in enumerate(
+                            DEFAULT_COMPARE_YEAR_RANGES
+                        )
                     ],
                 ],
             ),
@@ -188,12 +271,6 @@ def filter_component(df: pd.DataFrame) -> html.Div:
                 id=YEAR_RANGE_ERROR_ID,
                 className="year-range-error",
                 style={"display": "none"},
-            ),
-            html.Button(
-                "Apply",
-                id=APPLY_FILTERS_BUTTON_ID,
-                n_clicks=0,
-                className="apply-button",
             ),
         ],
     )

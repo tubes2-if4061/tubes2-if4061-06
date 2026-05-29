@@ -142,6 +142,43 @@ body {
     align-items: start;
 }
 
+.mode-layout {
+    display: grid;
+    gap: 12px;
+}
+
+.single-mode-layout {
+    grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.85fr);
+    align-items: stretch;
+}
+
+.compare-mode-layout {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.single-mode-layout > .visualization-section,
+.compare-mode-layout > .visualization-section {
+    min-width: 0;
+}
+
+.map-workspace {
+    grid-template-rows: auto auto auto;
+    align-content: start;
+}
+
+.mode-map-panel {
+    display: grid;
+    grid-template-areas:
+        "heading"
+        "map";
+    gap: 8px;
+    min-width: 0;
+}
+
+.mode-map-panel > .section-heading {
+    grid-area: heading;
+}
+
 .right-stack {
     display: grid;
     gap: 12px;
@@ -201,6 +238,12 @@ body {
         "map";
     align-items: start;
     row-gap: 8px;
+}
+
+.map-section {
+    grid-template-areas:
+        "heading"
+        "map";
 }
 
 .globe-section > .section-heading {
@@ -334,6 +377,15 @@ body {
 
 .graph2-section {
     min-height: 100%;
+}
+
+.single-mode-layout .graph2-section {
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.single-mode-layout .graph2-section .placeholder-card {
+    min-height: 0;
+    height: 100%;
 }
 
 .placeholder-card {
@@ -700,17 +752,17 @@ body {
 }
 
 .year-slider .rc-slider {
-    padding: 8px 0 18px;
+    padding: 10px 0 20px;
 }
 
 .year-slider .rc-slider-rail {
-    height: 5px;
-    background: rgba(255, 255, 255, 0.18);
+    height: 6px;
+    background: rgba(226, 232, 240, 0.5) !important;
 }
 
 .year-slider .rc-slider-track {
-    height: 5px;
-    background: var(--accent);
+    height: 6px;
+    background: #f97316 !important;
 }
 
 .year-slider .rc-slider-dot {
@@ -718,12 +770,12 @@ body {
 }
 
 .year-slider .rc-slider-handle {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     margin-top: -7px;
-    border: 2px solid #ffffff;
-    background: var(--accent);
-    box-shadow: 0 0 0 4px rgba(215, 25, 32, 0.24);
+    border: 3px solid #ffffff;
+    background: #f97316 !important;
+    box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.28);
     opacity: 1;
 }
 
@@ -731,28 +783,54 @@ body {
 .year-slider .rc-slider-handle:hover,
 .year-slider .rc-slider-handle:active {
     border-color: #ffffff;
-    box-shadow: 0 0 0 5px rgba(251, 106, 74, 0.28);
+    box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.38);
 }
 
 .year-slider .rc-slider-mark-text {
-    color: rgba(242, 240, 238, 0.72);
+    color: #dbeafe !important;
     font-size: 12px;
+    font-weight: 600;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
 }
 
 .year-slider .rc-slider-mark-text-active {
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
-.rc-slider-tooltip-inner {
-    border-radius: 4px;
-    background: rgba(8, 9, 9, 0.94);
-    color: var(--ink);
-    box-shadow: none;
-    font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
+.rc-slider-tooltip-inner,
+.rc-tooltip-inner {
+    min-width: 42px;
+    padding: 5px 8px;
+    border: 1px solid rgba(147, 197, 253, 0.55) !important;
+    border-radius: 6px;
+    background: #172033 !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 12px;
+    font-weight: 800;
 }
 
 .rc-slider-tooltip-placement-bottom .rc-slider-tooltip-arrow {
-    border-bottom-color: rgba(8, 9, 9, 0.94);
+    border-bottom-color: #172033 !important;
+}
+
+.rc-slider-tooltip-placement-top .rc-slider-tooltip-arrow {
+    border-top-color: #172033 !important;
+}
+
+.rc-tooltip-placement-bottom .rc-tooltip-arrow,
+.rc-tooltip-placement-bottom .rc-tooltip-arrow-content {
+    border-bottom-color: #172033 !important;
+}
+
+.rc-tooltip-placement-top .rc-tooltip-arrow,
+.rc-tooltip-placement-top .rc-tooltip-arrow-content {
+    border-top-color: #172033 !important;
+}
+
+.rc-tooltip-arrow::before {
+    background: #172033 !important;
 }
 
 .field-label {
@@ -920,6 +998,160 @@ body {
     letter-spacing: 0.3px;
 }
 
+.dashboard-controls > .filter-panel {
+    display: flex;
+    align-items: end;
+    gap: 14px;
+    width: 100%;
+    padding: 2px 0 0;
+}
+
+.dashboard-controls .mode-filter-wrap {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: max-content;
+}
+
+.dashboard-controls .mode-control,
+.dashboard-controls .single-year-mode-control,
+.dashboard-controls .compare-count-control {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    min-width: max-content;
+}
+
+.dashboard-controls .mode-filter,
+.dashboard-controls .single-year-mode-filter,
+.dashboard-controls .compare-count-filter {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: max-content;
+}
+
+.dashboard-controls .filter-label,
+.dashboard-controls .field-label,
+.dashboard-controls .range-label {
+    margin: 0;
+    min-width: 0;
+    font-size: 11px;
+    letter-spacing: 0.55px;
+}
+
+.dashboard-controls .mode-option,
+.dashboard-controls .single-year-mode-option {
+    min-width: 70px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+}
+
+.dashboard-controls .compare-count-option {
+    min-width: 28px;
+    padding: 3px 7px;
+    border-radius: 8px;
+    font-size: 11px;
+}
+
+.period-controls {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.period-controls-grid {
+    display: grid;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.period-controls-grid-1 {
+    grid-template-columns: 1fr;
+}
+
+.period-controls-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.period-controls-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.period-controls-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.period-controls .year-range-row {
+    grid-template-columns: minmax(58px, 0.85fr) minmax(64px, 1fr) minmax(64px, 1fr);
+    gap: 7px;
+    min-width: 0;
+    padding: 7px 8px 8px;
+    border-color: rgba(188, 205, 243, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.period-controls .year-slider-row {
+    gap: 10px;
+    min-width: 0;
+    padding: 8px 10px 11px;
+    border-color: rgba(188, 205, 243, 0.14);
+    border-radius: 10px;
+}
+
+.period-controls .single-year-slider-row {
+    grid-column: 1 / -1;
+}
+
+.period-controls .compare-year-slider-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+}
+
+.period-controls .range-label {
+    align-self: center;
+    color: #f0eeeb;
+    font-size: 12px;
+    letter-spacing: 0.35px;
+    white-space: nowrap;
+}
+
+.period-controls .field-label {
+    gap: 3px;
+    font-size: 10px;
+    letter-spacing: 0.45px;
+}
+
+.period-controls .year-input {
+    min-height: 28px;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.period-controls .year-slider .rc-slider {
+    padding: 6px 0 14px;
+}
+
+.period-controls .year-slider .rc-slider-mark-text {
+    font-size: 10px;
+}
+
+.period-controls + .map-legend {
+    margin-top: 2px;
+}
+
+.period-controls .year-range-error,
+.map-workspace .year-range-error {
+    justify-self: start;
+}
+
 .maps-container {
     width: 100%;
 }
@@ -1074,6 +1306,22 @@ body {
         grid-template-columns: 1fr;
     }
 
+    .single-mode-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-controls > .filter-panel {
+        flex-wrap: wrap;
+    }
+
+    .dashboard-controls .mode-filter-wrap,
+    .dashboard-controls .mode-filter,
+    .dashboard-controls .single-year-mode-filter,
+    .dashboard-controls .compare-count-filter {
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
     .dashboard-header {
         padding: 86px 16px 18px;
     }
@@ -1085,7 +1333,9 @@ body {
     }
 
     .maps-grid-3,
-    .maps-grid-4 {
+    .maps-grid-4,
+    .period-controls-grid-3,
+    .period-controls-grid-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 

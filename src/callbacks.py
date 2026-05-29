@@ -1,18 +1,26 @@
-from dash import Dash, Input, Output, State, ctx, dcc, html
+from dash import Dash, Input, Output, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
+from .components.filter import COMPARE_YEAR_DEFAULTS, COMPARE_YEAR_RANGE_DEFAULTS
 from .components.map import (
-    ATTACK_CATEGORY_COLORS,
-    UNREGISTERED_COUNTRY_COLOR,
     build_choropleth_map,
 )
 from .ids import (
-    APPLY_FILTERS_BUTTON_ID,
+    COMPARE_MAPS_CONTAINER_ID,
+    COMPARE_MAP_VIEW_TOGGLE_ID,
+    COMPARE_MODE_LAYOUT_ID,
     COMPARE_COUNT_FILTER_ID,
-    MAPS_CONTAINER_ID,
-    MAP_VIEW_TOGGLE_ID,
+    COMPARE_YEAR_SLIDER_IDS,
+    COMPARE_YEAR_SLIDER_ROW_IDS,
+    GRAPH2_SECTION_ID,
+    GRAPH3_SECTION_ID,
+    MODE_LAYOUT_ID,
     MODE_FILTER_ID,
+    PERIOD_CONTROLS_GRID_ID,
+    SINGLE_MAPS_CONTAINER_ID,
+    SINGLE_MAP_VIEW_TOGGLE_ID,
+    SINGLE_MODE_LAYOUT_ID,
     SINGLE_YEAR_MODE_CONTROL_ID,
     SINGLE_YEAR_MODE_FILTER_ID,
     SINGLE_YEAR_SLIDER_ID,
@@ -31,10 +39,10 @@ def visible_range_count(mode: str, compare_count: int | None) -> int:
     try:
         normalized_compare_count = int(compare_count)
     except (TypeError, ValueError):
-        return 2
+        return 4
 
     if normalized_compare_count not in {2, 3, 4}:
-        return 2
+        return 4
     return normalized_compare_count
 
 
@@ -109,14 +117,6 @@ def year_input_class_names(
     return [*start_class_names, *end_class_names]
 
 
-def format_year_range(start_year: int, end_year: int) -> str:
-    range_start = min(start_year, end_year)
-    range_end = max(start_year, end_year)
-    if range_start == range_end:
-        return str(range_start)
-    return f"{range_start}-{range_end}"
-
-
 def map_height(map_count: int) -> int:
     return {
         1: 400,
@@ -126,30 +126,45 @@ def map_height(map_count: int) -> int:
     }.get(map_count, 430)
 
 
-def attack_legend() -> html.Div:
-    legend_items = [
-        ("Not registered", UNREGISTERED_COUNTRY_COLOR),
-        *reversed(list(ATTACK_CATEGORY_COLORS.items())),
-    ]
+def build_maps_section(
+    data: pd.DataFrame,
+    year_ranges: list[tuple[int | None, int | None]],
+    graph_height: int,
+    selected_map_view: str,
+    graph_id_prefix: str,
+    min_year: int,
+    max_year: int,
+) -> html.Div:
+    map_count = len(year_ranges)
+    maps = []
+    for index, (start_year, end_year) in enumerate(year_ranges, start=1):
+        normalized_start_year = fallback_year(start_year, min_year)
+        normalized_end_year = fallback_year(end_year, max_year)
+        figure = build_choropleth_map(
+            data,
+            normalized_start_year,
+            normalized_end_year,
+            graph_height,
+            selected_map_view,
+        )
+        maps.append(
+            html.Div(
+                className="map-panel",
+                children=[
+                    dcc.Graph(
+                        id=f"{graph_id_prefix}-{index}",
+                        figure=figure,
+                        className="choropleth-map",
+                        config={"displayModeBar": True, "displaylogo": False, "responsive": True},
+                        style={"height": f"{graph_height}px", "width": "100%"},
+                    ),
+                ],
+            )
+        )
 
     return html.Div(
-        className="map-legend",
-        children=[
-            html.Div("Attacks", className="map-legend-title"),
-            *[
-                html.Div(
-                    className="map-legend-item",
-                    children=[
-                        html.Span(
-                            className="map-legend-swatch",
-                            style={"backgroundColor": color},
-                        ),
-                        html.Span(label),
-                    ],
-                )
-                for label, color in legend_items
-            ],
-        ],
+        className=f"maps-grid maps-grid-{map_count}",
+        children=maps,
     )
 
 
@@ -160,19 +175,81 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
 
     @app.callback(
         [
+            Output(MODE_LAYOUT_ID, "className"),
+            Output(SINGLE_MODE_LAYOUT_ID, "style"),
+            Output(COMPARE_MODE_LAYOUT_ID, "style"),
+            Output(GRAPH2_SECTION_ID, "style"),
+            Output(GRAPH3_SECTION_ID, "style"),
+        ],
+        Input(MODE_FILTER_ID, "value"),
+    )
+    def update_mode_layout(selected_mode: str) -> list[object]:
+        if selected_mode == "compare":
+            return [
+                "mode-layout compare-mode-layout",
+                {"display": "none"},
+                {"display": "grid"},
+                {"display": "none"},
+                {"display": "grid"},
+            ]
+        return [
+            "mode-layout single-mode-layout",
+            {"display": "grid"},
+            {"display": "none"},
+            {"display": "grid"},
+            {"display": "none"},
+        ]
+
+    @app.callback(
+        [
+            *[Output(input_id, "value") for input_id in YEAR_RANGE_START_IDS],
+            *[Output(input_id, "value") for input_id in YEAR_RANGE_END_IDS],
+            *[Output(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+        ],
+        [
+            Input(MODE_FILTER_ID, "value"),
+            Input(COMPARE_COUNT_FILTER_ID, "value"),
+        ],
+    )
+    def sync_compare_default_ranges(
+        selected_mode: str,
+        compare_count: int,
+    ) -> list[int | object]:
+        if selected_mode != "compare":
+            return [no_update] * (
+                len(YEAR_RANGE_START_IDS)
+                + len(YEAR_RANGE_END_IDS)
+                + len(COMPARE_YEAR_SLIDER_IDS)
+            )
+
+        defaults = COMPARE_YEAR_RANGE_DEFAULTS.get(
+            visible_range_count(selected_mode, compare_count),
+            COMPARE_YEAR_RANGE_DEFAULTS[4],
+        )
+        single_year_defaults = COMPARE_YEAR_DEFAULTS.get(
+            visible_range_count(selected_mode, compare_count),
+            COMPARE_YEAR_DEFAULTS[4],
+        )
+        return [
+            *[start_year for start_year, _end_year in defaults],
+            *[end_year for _start_year, end_year in defaults],
+            *single_year_defaults,
+        ]
+
+    @app.callback(
+        [
             Output("compare-count-control", "style"),
             Output(SINGLE_YEAR_MODE_CONTROL_ID, "style"),
             Output(SINGLE_YEAR_SLIDER_ROW_ID, "style"),
-            Output(APPLY_FILTERS_BUTTON_ID, "style"),
-            Output(APPLY_FILTERS_BUTTON_ID, "disabled"),
-            Output(APPLY_FILTERS_BUTTON_ID, "className"),
             Output(YEAR_RANGE_ERROR_ID, "children"),
             Output(YEAR_RANGE_ERROR_ID, "style"),
+            Output(PERIOD_CONTROLS_GRID_ID, "className"),
             *[
                 Output(input_id, "className")
                 for input_id in [*YEAR_RANGE_START_IDS, *YEAR_RANGE_END_IDS]
             ],
             *[Output(row_id, "style") for row_id in YEAR_RANGE_ROW_IDS],
+            *[Output(row_id, "style") for row_id in COMPARE_YEAR_SLIDER_ROW_IDS],
         ],
         [
             Input(MODE_FILTER_ID, "value"),
@@ -208,11 +285,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             (start_year_3, end_year_3),
             (start_year_4, end_year_4),
         ]
-        range_validation_count = (
-            0
-            if selected_mode != "compare" and single_year_mode == "slider"
-            else visible_count
-        )
+        range_validation_count = 0 if single_year_mode == "slider" else visible_count
         (
             validation_messages,
             invalid_start_indices,
@@ -227,26 +300,18 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         compare_count_style = (
             {"display": "grid"} if selected_mode == "compare" else {"display": "none"}
         )
-        single_year_mode_style = (
-            {"display": "grid"} if selected_mode != "compare" else {"display": "none"}
-        )
+        single_year_mode_style = {"display": "grid"}
         slider_style = (
             {"display": "grid"}
             if selected_mode != "compare" and single_year_mode == "slider"
             else {"display": "none"}
         )
-        apply_button_style = (
-            {"display": "none"}
-            if selected_mode != "compare" and single_year_mode == "slider"
-            else {}
-        )
-        apply_button_class_name = (
-            "apply-button apply-button-disabled"
-            if has_invalid_ranges
-            else "apply-button"
-        )
         error_message = " ".join(validation_messages)
         error_style = {"display": "block"} if has_invalid_ranges else {"display": "none"}
+        period_controls_grid_class_name = (
+            "year-ranges period-controls-grid "
+            f"period-controls-grid-{visible_count if selected_mode == 'compare' else 1}"
+        )
         input_class_names = year_input_class_names(
             invalid_start_indices,
             invalid_end_indices,
@@ -255,6 +320,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             {"display": "grid"}
             if (
                 selected_mode == "compare"
+                and single_year_mode != "slider"
                 and index < visible_count
                 or selected_mode != "compare"
                 and single_year_mode != "slider"
@@ -263,45 +329,100 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             else {"display": "none"}
             for index in range(len(YEAR_RANGE_ROW_IDS))
         ]
+        compare_slider_styles = [
+            {"display": "grid"}
+            if (
+                selected_mode == "compare"
+                and single_year_mode == "slider"
+                and index < visible_count
+            )
+            else {"display": "none"}
+            for index in range(len(COMPARE_YEAR_SLIDER_ROW_IDS))
+        ]
         return [
             compare_count_style,
             single_year_mode_style,
             slider_style,
-            apply_button_style,
-            has_invalid_ranges,
-            apply_button_class_name,
             error_message,
             error_style,
+            period_controls_grid_class_name,
             *input_class_names,
             *range_styles,
+            *compare_slider_styles,
         ]
 
     @app.callback(
-        Output(MAPS_CONTAINER_ID, "children"),
+        Output(SINGLE_MAPS_CONTAINER_ID, "children"),
         [
-            Input(APPLY_FILTERS_BUTTON_ID, "n_clicks"),
             Input(SINGLE_YEAR_SLIDER_ID, "value"),
             Input(MODE_FILTER_ID, "value"),
             Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
-            Input(MAP_VIEW_TOGGLE_ID, "value"),
+            Input(SINGLE_MAP_VIEW_TOGGLE_ID, "value"),
+            Input(YEAR_RANGE_START_IDS[0], "value"),
+            Input(YEAR_RANGE_END_IDS[0], "value"),
         ],
-        State(COMPARE_COUNT_FILTER_ID, "value"),
-        State(YEAR_RANGE_START_IDS[0], "value"),
-        State(YEAR_RANGE_END_IDS[0], "value"),
-        State(YEAR_RANGE_START_IDS[1], "value"),
-        State(YEAR_RANGE_END_IDS[1], "value"),
-        State(YEAR_RANGE_START_IDS[2], "value"),
-        State(YEAR_RANGE_END_IDS[2], "value"),
-        State(YEAR_RANGE_START_IDS[3], "value"),
-        State(YEAR_RANGE_END_IDS[3], "value"),
     )
-    def update_maps(
-        _n_clicks: int,
+    def update_single_map(
         single_year: int,
         selected_mode: str,
         single_year_mode: str,
         selected_map_view: str,
+        start_year: int,
+        end_year: int,
+    ) -> html.Div:
+        if selected_mode == "compare":
+            raise PreventUpdate
+
+        slider_is_active = single_year_mode == "slider"
+
+        if slider_is_active:
+            normalized_single_year = fallback_year(single_year, min_year)
+            year_ranges = [(normalized_single_year, normalized_single_year)]
+        else:
+            year_ranges = [(start_year, end_year)]
+            validation_messages, _invalid_start_indices, _invalid_end_indices = (
+                validate_year_ranges(year_ranges, 1, min_year, max_year)
+            )
+            if validation_messages:
+                raise PreventUpdate
+
+        return build_maps_section(
+            data,
+            year_ranges,
+            map_height(1),
+            selected_map_view or "globe",
+            "single-map",
+            min_year,
+            max_year,
+        )
+
+    @app.callback(
+        Output(COMPARE_MAPS_CONTAINER_ID, "children"),
+        [
+            Input(MODE_FILTER_ID, "value"),
+            Input(COMPARE_COUNT_FILTER_ID, "value"),
+            Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Input(COMPARE_MAP_VIEW_TOGGLE_ID, "value"),
+            *[Input(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+            Input(YEAR_RANGE_START_IDS[0], "value"),
+            Input(YEAR_RANGE_END_IDS[0], "value"),
+            Input(YEAR_RANGE_START_IDS[1], "value"),
+            Input(YEAR_RANGE_END_IDS[1], "value"),
+            Input(YEAR_RANGE_START_IDS[2], "value"),
+            Input(YEAR_RANGE_END_IDS[2], "value"),
+            Input(YEAR_RANGE_START_IDS[3], "value"),
+            Input(YEAR_RANGE_END_IDS[3], "value"),
+        ],
+    )
+    def update_compare_maps(
+        selected_mode: str,
         compare_count: int,
+        single_year_mode: str,
+        selected_map_view: str,
+        compare_year_1: int,
+        compare_year_2: int,
+        compare_year_3: int,
+        compare_year_4: int,
         start_year_1: int,
         end_year_1: int,
         start_year_2: int,
@@ -311,71 +432,36 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         start_year_4: int,
         end_year_4: int,
     ) -> html.Div:
-        slider_is_active = selected_mode != "compare" and single_year_mode == "slider"
-        slider_triggers = {
-            SINGLE_YEAR_SLIDER_ID,
-            MODE_FILTER_ID,
-            SINGLE_YEAR_MODE_FILTER_ID,
-        }
-        if ctx.triggered_id in slider_triggers and not slider_is_active:
+        if selected_mode != "compare":
             raise PreventUpdate
 
         visible_count = visible_range_count(selected_mode, compare_count)
-        year_ranges = [
-            (start_year_1, end_year_1),
-            (start_year_2, end_year_2),
-            (start_year_3, end_year_3),
-            (start_year_4, end_year_4),
-        ]
-        if selected_mode != "compare" and single_year_mode == "slider":
-            normalized_single_year = fallback_year(single_year, min_year)
-            year_ranges = [(normalized_single_year, normalized_single_year)]
+        if single_year_mode == "slider":
+            year_ranges = [
+                (fallback_year(compare_year_1, min_year), fallback_year(compare_year_1, min_year)),
+                (fallback_year(compare_year_2, min_year), fallback_year(compare_year_2, min_year)),
+                (fallback_year(compare_year_3, min_year), fallback_year(compare_year_3, min_year)),
+                (fallback_year(compare_year_4, min_year), fallback_year(compare_year_4, min_year)),
+            ]
         else:
+            year_ranges = [
+                (start_year_1, end_year_1),
+                (start_year_2, end_year_2),
+                (start_year_3, end_year_3),
+                (start_year_4, end_year_4),
+            ]
             validation_messages, _invalid_start_indices, _invalid_end_indices = (
                 validate_year_ranges(year_ranges, visible_count, min_year, max_year)
             )
             if validation_messages:
                 raise PreventUpdate
 
-        apply_key = _n_clicks or 0
-        graph_height = map_height(visible_count)
-        maps = []
-        for index, (start_year, end_year) in enumerate(year_ranges[:visible_count], start=1):
-            normalized_start_year = fallback_year(start_year, min_year)
-            normalized_end_year = fallback_year(end_year, max_year)
-            figure = build_choropleth_map(
-                data,
-                normalized_start_year,
-                normalized_end_year,
-                graph_height,
-                selected_map_view,
-            )
-            maps.append(
-                html.Div(
-                    className="map-panel",
-                    children=[
-                        dcc.Graph(
-                            id=f"choropleth-map-{apply_key}-{index}-{normalized_start_year}-{normalized_end_year}",
-                            figure=figure,
-                            className="choropleth-map",
-                            config={"displayModeBar": True, "displaylogo": False, "responsive": True},
-                            style={"height": f"{graph_height}px", "width": "100%"},
-                        ),
-                        html.Div(
-                            format_year_range(normalized_start_year, normalized_end_year),
-                            className="map-caption",
-                        ),
-                    ],
-                )
-            )
-
-        return html.Div(
-            className="maps-section",
-            children=[
-                html.Div(
-                    className=f"maps-grid maps-grid-{visible_count}",
-                    children=maps,
-                ),
-                attack_legend(),
-            ],
+        return build_maps_section(
+            data,
+            year_ranges[:visible_count],
+            map_height(visible_count),
+            selected_map_view or "choropleth",
+            "compare-map",
+            min_year,
+            max_year,
         )

@@ -1,6 +1,14 @@
+from dash import dcc, html
 import pandas as pd
 import plotly.express as px
 from plotly.graph_objs import Figure
+
+from ..ids import (
+    COMPARE_MAPS_CONTAINER_ID,
+    COMPARE_MAP_VIEW_TOGGLE_ID,
+    SINGLE_MAPS_CONTAINER_ID,
+    SINGLE_MAP_VIEW_TOGGLE_ID,
+)
 
 
 ATTACK_CATEGORY_COLORS = {
@@ -11,6 +19,95 @@ ATTACK_CATEGORY_COLORS = {
 }
 ATTACK_CATEGORY_ORDER = list(ATTACK_CATEGORY_COLORS.keys())
 UNREGISTERED_COUNTRY_COLOR = "#e7e8e8"
+
+
+def map_view_toggle(toggle_id: str, default_view: str) -> dcc.RadioItems:
+    return dcc.RadioItems(
+        id=toggle_id,
+        options=[
+            {"label": "Globe", "value": "globe"},
+            {"label": "Choropleth", "value": "choropleth"},
+        ],
+        value=default_view,
+        className="map-view-toggle",
+        inputClassName="map-view-input",
+        labelClassName="map-view-option",
+    )
+
+
+def map_stage(container_id: str, toggle_id: str, default_view: str) -> html.Div:
+    return html.Div(
+        className="maps-stage",
+        children=[
+            map_view_toggle(toggle_id, default_view),
+            html.Div(id=container_id, className="maps-container"),
+        ],
+    )
+
+
+def single_map_component() -> html.Div:
+    return html.Div(
+        className="mode-map-panel single-map-section",
+        children=[
+            html.Div(
+                className="section-heading",
+                children=[
+                    html.H2("Globe Interaktif", className="section-title"),
+                ],
+            ),
+            map_stage(
+                SINGLE_MAPS_CONTAINER_ID,
+                SINGLE_MAP_VIEW_TOGGLE_ID,
+                "globe",
+            ),
+        ],
+    )
+
+
+def compare_map_component() -> html.Div:
+    return html.Div(
+        className="mode-map-panel compare-map-section",
+        children=[
+            html.Div(
+                className="section-heading",
+                children=[
+                    html.H2("Peta Perbandingan", className="section-title"),
+                ],
+            ),
+            map_stage(
+                COMPARE_MAPS_CONTAINER_ID,
+                COMPARE_MAP_VIEW_TOGGLE_ID,
+                "choropleth",
+            ),
+        ],
+    )
+
+
+def attack_legend() -> html.Div:
+    legend_items = [
+        ("Not registered", UNREGISTERED_COUNTRY_COLOR),
+        *reversed(list(ATTACK_CATEGORY_COLORS.items())),
+    ]
+
+    return html.Div(
+        className="map-legend",
+        children=[
+            html.Div("Attacks", className="map-legend-title"),
+            *[
+                html.Div(
+                    className="map-legend-item",
+                    children=[
+                        html.Span(
+                            className="map-legend-swatch",
+                            style={"backgroundColor": color},
+                        ),
+                        html.Span(label),
+                    ],
+                )
+                for label, color in legend_items
+            ],
+        ],
+    )
 
 
 def attack_category(n_atk: int) -> str:

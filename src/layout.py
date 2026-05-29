@@ -1,9 +1,16 @@
-from dash import dcc, html
+from dash import html
 import pandas as pd
 
-from .components.filter import filter_component
+from .components.filter import filter_component, period_controls_component
+from .components.map import attack_legend, compare_map_component, single_map_component
 from .components.title import title_component
-from .ids import MAPS_CONTAINER_ID, MAP_VIEW_TOGGLE_ID
+from .ids import (
+    COMPARE_MODE_LAYOUT_ID,
+    GRAPH2_SECTION_ID,
+    GRAPH3_SECTION_ID,
+    MODE_LAYOUT_ID,
+    SINGLE_MODE_LAYOUT_ID,
+)
 
 
 def summary_cards(data: pd.DataFrame) -> html.Div:
@@ -35,6 +42,34 @@ def summary_cards(data: pd.DataFrame) -> html.Div:
     )
 
 
+def graph_placeholder(
+    title: str,
+    section_class_name: str,
+    card_class_name: str = "placeholder-card",
+    section_id: str | None = None,
+    style: dict[str, str] | None = None,
+) -> html.Div:
+    return html.Div(
+        id=section_id,
+        className=f"visualization-section {section_class_name}",
+        style=style,
+        children=[
+            html.Div(
+                className="section-heading",
+                children=[
+                    html.H2(title, className="section-title"),
+                ],
+            ),
+            html.Div(
+                className=card_class_name,
+                children=[
+                    html.Div("Blank for now", className="placeholder-title"),
+                ],
+            ),
+        ],
+    )
+
+
 def create_layout(data: pd.DataFrame) -> html.Div:
     return html.Div(
         className="app-shell",
@@ -57,76 +92,43 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                         children=[
                             title_component(),
                             summary_cards(data),
+                            html.Div(
+                                className="dashboard-controls",
+                                children=filter_component(data),
+                            ),
                             html.Section(
-                                className="content-grid",
+                                id=MODE_LAYOUT_ID,
+                                className="mode-layout compare-mode-layout",
                                 children=[
                                     html.Div(
-                                        className="visualization-section globe-section",
+                                        className="visualization-section map-workspace",
                                         children=[
                                             html.Div(
-                                                className="section-heading",
-                                                children=[
-                                                    html.H2("Globe Interaktif", className="section-title"),
-                                                ],
+                                                id=SINGLE_MODE_LAYOUT_ID,
+                                                style={"display": "none"},
+                                                children=single_map_component(),
                                             ),
-                                            filter_component(data),
                                             html.Div(
-                                                className="maps-stage",
-                                                children=[
-                                                    dcc.RadioItems(
-                                                        id=MAP_VIEW_TOGGLE_ID,
-                                                        options=[
-                                                            {"label": "Globe", "value": "globe"},
-                                                            {"label": "Choropleth", "value": "choropleth"},
-                                                        ],
-                                                        value="globe",
-                                                        className="map-view-toggle",
-                                                        inputClassName="map-view-input",
-                                                        labelClassName="map-view-option",
-                                                    ),
-                                                    html.Div(id=MAPS_CONTAINER_ID, className="maps-container"),
-                                                ],
+                                                id=COMPARE_MODE_LAYOUT_ID,
+                                                style={"display": "grid"},
+                                                children=compare_map_component(),
                                             ),
+                                            period_controls_component(data),
+                                            attack_legend(),
                                         ],
                                     ),
-                                    html.Div(
-                                        className="right-stack",
-                                        children=[
-                                            html.Div(
-                                                className="visualization-section graph2-section",
-                                                children=[
-                                                    html.Div(
-                                                        className="section-heading",
-                                                        children=[
-                                                            html.H2("Graph 2", className="section-title"),
-                                                        ],
-                                                    ),
-                                                    html.Div(
-                                                        className="placeholder-card",
-                                                        children=[
-                                                            html.Div("Blank for now", className="placeholder-title"),
-                                                        ],
-                                                    ),
-                                                ],
-                                            ),
-                                            html.Div(
-                                                className="visualization-section graph3-section",
-                                                children=[
-                                                    html.Div(
-                                                        className="section-heading",
-                                                        children=[
-                                                            html.H2("Graph 3", className="section-title"),
-                                                        ],
-                                                    ),
-                                                    html.Div(
-                                                        className="placeholder-card graph3-card",
-                                                        children=[
-                                                            html.Div("Blank for now", className="placeholder-title"),
-                                                        ],
-                                                    ),
-                                                ],
-                                            ),
-                                        ],
+                                    graph_placeholder(
+                                        "Graph 2",
+                                        "graph2-section",
+                                        section_id=GRAPH2_SECTION_ID,
+                                        style={"display": "none"},
+                                    ),
+                                    graph_placeholder(
+                                        "Graph 3",
+                                        "graph3-section",
+                                        "placeholder-card graph3-card",
+                                        section_id=GRAPH3_SECTION_ID,
+                                        style={"display": "grid"},
                                     ),
                                 ],
                             ),
