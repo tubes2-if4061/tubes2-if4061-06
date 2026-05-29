@@ -67,6 +67,7 @@ def build_choropleth_map(
     start_year: int,
     end_year: int,
     height: int,
+    map_view: str = "globe",
 ) -> Figure:
     range_start = min(start_year, end_year)
     range_end = max(start_year, end_year)
@@ -85,19 +86,33 @@ def build_choropleth_map(
             "attack_category": False,
             "n_atk": ":,",
         },
-        projection="natural earth",
+        projection="orthographic" if map_view == "globe" else "natural earth",
     )
 
+    geos_config = {
+        "domain": {"x": [0, 1], "y": [0, 1]},
+        "projection_rotation": {"lon": -25, "lat": 18, "roll": 0},
+        "showframe": False,
+        "showcoastlines": False,
+        "showocean": True,
+        "oceancolor": "#0b1220",
+        "showlakes": True,
+        "lakecolor": "#0b1220",
+        "showland": True,
+        "landcolor": UNREGISTERED_COUNTRY_COLOR,
+        "showcountries": True,
+        "countrycolor": "rgba(255, 255, 255, 0.18)",
+        "bgcolor": "rgba(0, 0, 0, 0)",
+    }
+
+    if map_view == "globe":
+        geos_config["projection_scale"] = 0.84
+    else:
+        geos_config["projection_rotation"] = {"lon": 0, "lat": 0, "roll": 0}
+        geos_config["showcoastlines"] = True
+
     figure.update_geos(
-        domain={"x": [0, 1], "y": [0, 1]},
-        showframe=False,
-        showcoastlines=True,
-        coastlinecolor="rgba(255, 255, 255, 0.62)",
-        showland=True,
-        landcolor=UNREGISTERED_COUNTRY_COLOR,
-        showcountries=True,
-        countrycolor="rgba(38, 38, 38, 0.36)",
-        bgcolor="rgba(0, 0, 0, 0)",
+        **geos_config,
     )
     figure.update_layout(
         autosize=True,
@@ -106,7 +121,7 @@ def build_choropleth_map(
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         showlegend=False,
-        font={"family": "Oswald, Arial, sans-serif", "color": "#f2f0ee"},
+        font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
     )
 
     return figure

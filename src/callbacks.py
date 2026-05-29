@@ -11,6 +11,7 @@ from .ids import (
     APPLY_FILTERS_BUTTON_ID,
     COMPARE_COUNT_FILTER_ID,
     MAPS_CONTAINER_ID,
+    MAP_VIEW_TOGGLE_ID,
     MODE_FILTER_ID,
     SINGLE_YEAR_MODE_CONTROL_ID,
     SINGLE_YEAR_MODE_FILTER_ID,
@@ -118,7 +119,7 @@ def format_year_range(start_year: int, end_year: int) -> str:
 
 def map_height(map_count: int) -> int:
     return {
-        1: 470,
+        1: 400,
         2: 340,
         3: 310,
         4: 285,
@@ -127,8 +128,8 @@ def map_height(map_count: int) -> int:
 
 def attack_legend() -> html.Div:
     legend_items = [
-        *ATTACK_CATEGORY_COLORS.items(),
         ("Not registered", UNREGISTERED_COUNTRY_COLOR),
+        *reversed(list(ATTACK_CATEGORY_COLORS.items())),
     ]
 
     return html.Div(
@@ -282,6 +283,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             Input(SINGLE_YEAR_SLIDER_ID, "value"),
             Input(MODE_FILTER_ID, "value"),
             Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Input(MAP_VIEW_TOGGLE_ID, "value"),
         ],
         State(COMPARE_COUNT_FILTER_ID, "value"),
         State(YEAR_RANGE_START_IDS[0], "value"),
@@ -298,6 +300,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         single_year: int,
         selected_mode: str,
         single_year_mode: str,
+        selected_map_view: str,
         compare_count: int,
         start_year_1: int,
         end_year_1: int,
@@ -345,6 +348,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
                 normalized_start_year,
                 normalized_end_year,
                 graph_height,
+                selected_map_view,
             )
             maps.append(
                 html.Div(
@@ -354,7 +358,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
                             id=f"choropleth-map-{apply_key}-{index}-{normalized_start_year}-{normalized_end_year}",
                             figure=figure,
                             className="choropleth-map",
-                            config={"displayModeBar": False, "responsive": True},
+                            config={"displayModeBar": True, "displaylogo": False, "responsive": True},
                             style={"height": f"{graph_height}px", "width": "100%"},
                         ),
                         html.Div(

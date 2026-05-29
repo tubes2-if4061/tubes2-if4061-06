@@ -7,6 +7,7 @@ SINGLE_YEAR_SLIDER_ROW_ID = "single-year-slider-row"
 YEAR_RANGE_CONTAINER_ID = "year-range-container"
 YEAR_RANGE_ERROR_ID = "year-range-error"
 MAPS_CONTAINER_ID = "maps-container"
+MAP_VIEW_TOGGLE_ID = "map-view-toggle"
 APPLY_FILTERS_BUTTON_ID = "apply-filters-button"
 
 YEAR_RANGE_START_IDS = [
