@@ -201,11 +201,44 @@ body {
     padding: 20px;
     gap: 20px;
     display: none;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .line-graph-workspace.is-visible {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.graph-card {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.graph-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.line-graph {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.line-graph > div,
+.line-graph .js-plotly-plot,
+.line-graph .plot-container,
+.line-graph .svg-container {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .map-workspace {
@@ -603,6 +636,36 @@ body {
     background:
         radial-gradient(circle at top left, rgba(178, 34, 34, 0.22), transparent 34%),
         rgba(8, 13, 23, 0.58);
+}
+
+.country-detail-empty-card {
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.no-data-detail-panel {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 8px;
+    min-height: 160px;
+    padding: 18px;
+    border: 1px dashed rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.no-data-detail-title {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.no-data-detail-message {
+    margin: 0;
+    color: rgba(224, 224, 224, 0.72);
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 .detail-header {
@@ -1845,12 +1908,34 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .single-mode-layout {
+    .single-mode-layout,
+    .single-mode-layout.has-country-detail {
         grid-template-columns: 1fr;
+        grid-template-rows: auto;
         grid-template-areas:
             "map"
             "detail"
             "sankey";
+        align-items: start;
+    }
+
+    .single-mode-layout.has-country-detail .graph2-section,
+    .single-mode-layout.has-country-detail .graph2-content-container,
+    .single-mode-layout.has-country-detail .graph2-content,
+    .single-mode-layout.has-country-detail .country-detail-card {
+        contain: none;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .single-mode-layout.has-country-detail .country-detail-card {
+        align-self: start;
+    }
+
+    .single-mode-layout.has-country-detail .org-list {
+        max-height: 360px;
+        overflow-y: auto;
     }
 
     .dashboard-controls > .filter-panel {
@@ -2007,6 +2092,32 @@ body {
 
     .apply-button {
         justify-self: stretch;
+    }
+
+    .country-detail-card {
+        padding: 12px;
+        border-radius: 14px;
+    }
+
+    .detail-header {
+        padding-right: 64px;
+    }
+
+    .detail-close-button {
+        top: 10px;
+        right: 10px;
+        min-height: 28px;
+        padding: 0 10px;
+        font-size: 11px;
+    }
+
+    .detail-metric-card {
+        padding: 9px 10px;
+    }
+
+    .org-row {
+        gap: 8px;
+        padding: 7px 8px;
     }
 
     .mode-option {

@@ -40,6 +40,8 @@ from .ids import (
     SINGLE_YEAR_SLIDER_VALUE_ID,
     TOP_5_ATTACK_TYPE_GRAPH_ID,
     TOP_5_TARGET_TYPE_GRAPH_ID,
+    VIEWPORT_WIDTH_INTERVAL_ID,
+    VIEWPORT_WIDTH_STORE_ID,
     YEAR_RANGE_ERROR_ID,
     YEAR_RANGE_END_IDS,
     YEAR_RANGE_ROW_IDS,
@@ -74,6 +76,12 @@ def year_slider_percent(year: int, min_year: int, max_year: int) -> str:
     if year_range <= 0:
         return "0%"
     return f"{((year - min_year) / year_range) * 100}%"
+
+
+def line_legend_should_move_below(viewport_width: Optional[int]) -> bool:
+    if viewport_width is None:
+        return False
+    return int(viewport_width) < 1100
 
 
 def validate_year_ranges(
@@ -196,6 +204,16 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
     """Registers all callbacks for the Dash app."""
     min_year = int(data["year"].min())
     max_year = int(data["year"].max())
+
+    app.clientside_callback(
+        """
+        function(_n_intervals) {
+            return window.innerWidth || document.documentElement.clientWidth || 1200;
+        }
+        """,
+        Output(VIEWPORT_WIDTH_STORE_ID, "data"),
+        Input(VIEWPORT_WIDTH_INTERVAL_ID, "n_intervals"),
+    )
 
     @app.callback(
         [
@@ -661,6 +679,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             Input(YEAR_RANGE_END_IDS[2], "value"),
             Input(YEAR_RANGE_START_IDS[3], "value"),
             Input(YEAR_RANGE_END_IDS[3], "value"),
+            Input(VIEWPORT_WIDTH_STORE_ID, "data"),
         ],
     )
     def update_both_line_graphs(
@@ -680,6 +699,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         end_year_3: int | None,
         start_year_4: int | None,
         end_year_4: int | None,
+        viewport_width: int | None,
     ) -> tuple[Figure, Figure]:
         
         year_ranges = []
@@ -716,7 +736,16 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             if not year_ranges:
                 raise PreventUpdate
 
-        fig_attack = build_top_5_attack_type_line_graph(data, year_ranges)
-        fig_target = build_top_5_target_type_line_graph(data, year_ranges)
+        legend_below = line_legend_should_move_below(viewport_width)
+        fig_attack = build_top_5_attack_type_line_graph(
+            data,
+            year_ranges,
+            legend_below=legend_below,
+        )
+        fig_target = build_top_5_target_type_line_graph(
+            data,
+            year_ranges,
+            legend_below=legend_below,
+        )
 
         return fig_attack, fig_target

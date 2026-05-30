@@ -271,6 +271,29 @@ def build_country_sankey(
     range_start = min(start_year, end_year)
     range_end = max(start_year, end_year)
 
+    def empty_sankey_figure(message: str) -> Figure:
+        figure = go.Figure()
+        figure.add_annotation(
+            text=message,
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            align="center",
+            font={"size": 15, "color": "#e0e0e0"},
+        )
+        figure.update_layout(
+            font=dict(size=12, color="#f2f0ee"),
+            paper_bgcolor="rgba(0, 0, 0, 0)",
+            plot_bgcolor="rgba(0, 0, 0, 0)",
+            height=height,
+            margin=dict(l=0, r=0, t=20, b=0),
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+        )
+        return figure
+
     filtered_data = data[
         (data["year"] >= range_start)
         & (data["year"] <= range_end)
@@ -283,8 +306,9 @@ def build_country_sankey(
         country_data = filtered_data
 
     if len(country_data) == 0:
-        # Return empty figure if no data
-        return go.Figure()
+        return empty_sankey_figure(
+            f"Tidak ada data untuk {root_label}<br>pada periode {range_start}-{range_end}."
+        )
 
     source = []
     target = []
@@ -353,6 +377,11 @@ def build_country_sankey(
     target = [k[1] for k in sankey_dict.keys()]
     value = list(sankey_dict.values())
     hover_value = [int(round(link_value)) for link_value in value]
+
+    if not value:
+        return empty_sankey_figure(
+            f"Tidak ada data untuk {root_label}<br>pada periode {range_start}-{range_end}."
+        )
     
     node_colors = []
     for node in nodes:
@@ -487,6 +516,41 @@ def country_detail_component(
     )
 
 
+def no_data_country_detail_component(
+    country_name: str,
+    start_year: int,
+    end_year: int,
+) -> html.Div:
+    period_label = str(start_year) if start_year == end_year else f"{start_year}-{end_year}"
+
+    return html.Div(
+        className="country-detail-card country-detail-empty-card",
+        children=[
+            html.Div(
+                className="detail-header",
+                children=[
+                    html.Div(
+                        children=[
+                            html.Div("Negara", className="detail-eyebrow"),
+                            html.H3(country_name, className="country-name"),
+                        ],
+                    ),
+                ],
+            ),
+            html.Div(
+                className="no-data-detail-panel",
+                children=[
+                    html.Div("Tidak ada data", className="no-data-detail-title"),
+                    html.P(
+                        f"Tidak ada serangan tercatat untuk periode {period_label}.",
+                        className="no-data-detail-message",
+                    ),
+                ],
+            ),
+        ],
+    )
+
+
 def build_country_detail_content(
     data: pd.DataFrame,
     country_name: str,
@@ -505,7 +569,16 @@ def build_country_detail_content(
     ]
     
     if len(country_data) == 0:
-        return html.Div("Data tidak tersedia untuk negara ini", className="no-data-message")
+        return html.Div(
+            className="graph2-content",
+            children=[
+                no_data_country_detail_component(
+                    country_name,
+                    range_start,
+                    range_end,
+                ),
+            ],
+        )
     
     total_attacks = int(country_data["n_atk"].sum())
     total_kill = int(country_data["n_kill"].sum()) if "n_kill" in country_data.columns else 0
@@ -577,9 +650,39 @@ def get_top_5_attack_types_data(
     
     return long_data
 
+
+def line_chart_legend_layout(title: str, legend_below: bool) -> dict:
+    if legend_below:
+        return {
+            "orientation": "h",
+            "yanchor": "top",
+            "y": -0.34,
+            "xanchor": "left",
+            "x": 0,
+            "font": {"size": 11},
+            "title": {"text": title},
+        }
+
+    return {
+        "orientation": "v",
+        "yanchor": "top",
+        "y": 1,
+        "xanchor": "left",
+        "x": 1.02,
+        "font": {"size": 11},
+        "title": {"text": title},
+    }
+
+
+def line_chart_margin(legend_below: bool) -> dict:
+    if legend_below:
+        return {"l": 44, "r": 8, "t": 28, "b": 112}
+    return {"l": 44, "r": 170, "t": 28, "b": 54}
+
 def build_top_5_attack_type_line_graph(
     data: pd.DataFrame,
     year_ranges: list[tuple[int, int]],
+    legend_below: bool = False,
 ) -> Figure:
     min_year = int(data["year"].min())
     max_year = int(data["year"].max())
@@ -650,11 +753,12 @@ def build_top_5_attack_type_line_graph(
     dynamic_dtick = 1 if window_size <= 20 else 2
 
     figure.update_layout(
-        legend_title_text="Jenis Serangan",
+        autosize=True,
+        legend=line_chart_legend_layout("Jenis Serangan", legend_below),
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
-        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        margin=line_chart_margin(legend_below),
         xaxis={
             "range": [zoom_min, zoom_max],
             "showgrid": True,
@@ -663,10 +767,12 @@ def build_top_5_attack_type_line_graph(
             "griddash": "dot", 
             "dtick": dynamic_dtick, 
             "tickangle": -45,
+            "automargin": True,
         },
         yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)",
                "range": [0, y_axis_max],
-               "zeroline": False},
+               "zeroline": False,
+               "automargin": True},
         hovermode="x unified", 
         hoverlabel={
             "bgcolor": "rgba(26, 26, 26, 0.85)",
@@ -720,6 +826,7 @@ def get_top_5_target_types_data(
 def build_top_5_target_type_line_graph(
     data: pd.DataFrame,
     year_ranges: list[tuple[int, int]],
+    legend_below: bool = False,
 ) -> Figure:
     min_year = int(data["year"].min())
     max_year = int(data["year"].max())
@@ -790,11 +897,12 @@ def build_top_5_target_type_line_graph(
     dynamic_dtick = 1 if window_size <= 20 else 2
 
     figure.update_layout(
-        legend_title_text="Jenis Target",
+        autosize=True,
+        legend=line_chart_legend_layout("Jenis Target", legend_below),
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
-        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        margin=line_chart_margin(legend_below),
         xaxis={
             "range": [zoom_min, zoom_max],
             "showgrid": True,
@@ -803,10 +911,12 @@ def build_top_5_target_type_line_graph(
             "griddash": "dot", 
             "dtick": dynamic_dtick, 
             "tickangle": -45,
+            "automargin": True,
         },
         yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)",
                "range": [0, y_axis_max],
-               "zeroline": False},
+               "zeroline": False,
+               "automargin": True},
         hovermode="x unified", 
         hoverlabel={
             "bgcolor": "rgba(26, 26, 26, 0.85)",

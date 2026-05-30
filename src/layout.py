@@ -17,6 +17,8 @@ from .ids import (
     SINGLE_MAP_CLICK_DATA_ID,
     TOP_5_ATTACK_TYPE_GRAPH_ID,
     TOP_5_TARGET_TYPE_GRAPH_ID,
+    VIEWPORT_WIDTH_INTERVAL_ID,
+    VIEWPORT_WIDTH_STORE_ID,
 )
 
 
@@ -159,6 +161,12 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                         ],
                                     ),
                                     dcc.Store(id=SINGLE_MAP_CLICK_DATA_ID),
+                                    dcc.Store(id=VIEWPORT_WIDTH_STORE_ID),
+                                    dcc.Interval(
+                                        id=VIEWPORT_WIDTH_INTERVAL_ID,
+                                        interval=1000,
+                                        n_intervals=0,
+                                    ),
                             html.Div(
                                 id=LINE_GRAPH_WORKSPACE_ID,
                                 className="visualization-section line-graph-workspace",
@@ -170,7 +178,11 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                             dcc.Graph(
                                                 id=TOP_5_ATTACK_TYPE_GRAPH_ID,
                                                 className="line-graph",
-                                                config={"displayModeBar": False},
+                                                config={
+                                                    "displayModeBar": False,
+                                                    "responsive": True,
+                                                },
+                                                responsive=True,
                                                 style={"height": "350px", "width": "100%"},
                                             )
                                         ],
@@ -182,7 +194,11 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                             dcc.Graph(
                                                 id=TOP_5_TARGET_TYPE_GRAPH_ID,
                                                 className="line-graph",
-                                                config={"displayModeBar": False},
+                                                config={
+                                                    "displayModeBar": False,
+                                                    "responsive": True,
+                                                },
+                                                responsive=True,
                                                 style={"height": "350px", "width": "100%"},
                                             )
                                         ],
