@@ -166,6 +166,7 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                         id=VIEWPORT_WIDTH_INTERVAL_ID,
                                         interval=1000,
                                         n_intervals=0,
+                                        max_intervals=1,
                                     ),
                             html.Div(
                                 id=LINE_GRAPH_WORKSPACE_ID,
