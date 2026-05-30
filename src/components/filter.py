@@ -6,12 +6,14 @@ from ..ids import (
     COMPARE_COUNT_FILTER_ID,
     COMPARE_YEAR_SLIDER_IDS,
     COMPARE_YEAR_SLIDER_ROW_IDS,
+    COMPARE_YEAR_SLIDER_VALUE_IDS,
     MODE_FILTER_ID,
     PERIOD_CONTROLS_GRID_ID,
     SINGLE_YEAR_MODE_CONTROL_ID,
     SINGLE_YEAR_MODE_FILTER_ID,
     SINGLE_YEAR_SLIDER_ID,
     SINGLE_YEAR_SLIDER_ROW_ID,
+    SINGLE_YEAR_SLIDER_VALUE_ID,
     YEAR_RANGE_ERROR_ID,
     YEAR_RANGE_END_IDS,
     YEAR_RANGE_ROW_IDS,
@@ -104,6 +106,66 @@ def slider_marks(years: List[int]) -> Dict[int, str]:
     return decade_marks
 
 
+def slider_percent(year: int, years: List[int]) -> str:
+    return f"{((year - years[0]) / (years[-1] - years[0])) * 100}%"
+
+
+def custom_year_slider(
+    slider_id: str,
+    value_id: str,
+    years: List[int],
+    default_year: int,
+) -> html.Div:
+    marks = slider_marks(years)
+
+    return html.Div(
+        className="custom-year-slider",
+        children=[
+            html.Div(
+                className="custom-slider-shell",
+                **{
+                    "data-slider-min": years[0],
+                    "data-slider-max": years[-1],
+                    "data-slider-step": 1,
+                    "data-slider-input-id": slider_id,
+                },
+                children=[
+                    dcc.Input(
+                        id=slider_id,
+                        type="range",
+                        min=years[0],
+                        max=years[-1],
+                        step=1,
+                        value=default_year,
+                        className="custom-slider-input",
+                    ),
+                    html.Div(
+                        str(default_year),
+                        id=value_id,
+                        className="custom-slider-value",
+                        style={"left": slider_percent(default_year, years)},
+                    ),
+                ],
+            ),
+            html.Div(
+                className="custom-slider-marks",
+                children=[
+                    html.Span(
+                        label,
+                        className="custom-slider-mark",
+                        style={
+                            "left": (
+                                f"{((year - years[0]) / (years[-1] - years[0])) * 100}%"
+                            )
+                        },
+                    )
+                    for year, label in marks.items()
+                ],
+            ),
+        ],
+    )
+
+
 def single_year_slider_row(years: List[int], default_year: int) -> html.Div:
     return html.Div(
         id=SINGLE_YEAR_SLIDER_ROW_ID,
@@ -114,18 +176,12 @@ def single_year_slider_row(years: List[int], default_year: int) -> html.Div:
             html.Div(
                 className="year-slider-wrap",
                 children=[
-                    dcc.Slider(
-                        id=SINGLE_YEAR_SLIDER_ID,
-                        min=years[0],
-                        max=years[-1],
-                        step=1,
-                        value=default_year,
-                        marks=slider_marks(years),
-                        included=False,
-                        updatemode="drag",
-                        tooltip={"placement": "bottom", "always_visible": False},
-                        className="year-slider",
-                    )
+                    custom_year_slider(
+                        SINGLE_YEAR_SLIDER_ID,
+                        SINGLE_YEAR_SLIDER_VALUE_ID,
+                        years,
+                        default_year,
+                    ),
                 ],
             ),
         ],
@@ -146,18 +202,12 @@ def compare_year_slider_row(
             html.Div(
                 className="year-slider-wrap",
                 children=[
-                    dcc.Slider(
-                        id=COMPARE_YEAR_SLIDER_IDS[row_index],
-                        min=years[0],
-                        max=years[-1],
-                        step=1,
-                        value=default_year,
-                        marks=slider_marks(years),
-                        included=False,
-                        updatemode="drag",
-                        tooltip={"placement": "bottom", "always_visible": False},
-                        className="year-slider",
-                    )
+                    custom_year_slider(
+                        COMPARE_YEAR_SLIDER_IDS[row_index],
+                        COMPARE_YEAR_SLIDER_VALUE_IDS[row_index],
+                        years,
+                        default_year,
+                    ),
                 ],
             ),
         ],

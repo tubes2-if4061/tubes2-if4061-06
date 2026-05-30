@@ -24,6 +24,7 @@ from .ids import (
     COMPARE_COUNT_FILTER_ID,
     COMPARE_YEAR_SLIDER_IDS,
     COMPARE_YEAR_SLIDER_ROW_IDS,
+    COMPARE_YEAR_SLIDER_VALUE_IDS,
     GRAPH2_SECTION_ID,
     LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
@@ -36,6 +37,7 @@ from .ids import (
     SINGLE_YEAR_MODE_FILTER_ID,
     SINGLE_YEAR_SLIDER_ID,
     SINGLE_YEAR_SLIDER_ROW_ID,
+    SINGLE_YEAR_SLIDER_VALUE_ID,
     TOP_5_ATTACK_TYPE_GRAPH_ID,
     TOP_5_TARGET_TYPE_GRAPH_ID,
     YEAR_RANGE_ERROR_ID,
@@ -65,6 +67,13 @@ def fallback_year(value: Optional[int], fallback: int) -> int:
     if value is None:
         return fallback
     return int(value)
+
+
+def year_slider_percent(year: int, min_year: int, max_year: int) -> str:
+    year_range = max_year - min_year
+    if year_range <= 0:
+        return "0%"
+    return f"{((year - min_year) / year_range) * 100}%"
 
 
 def validate_year_ranges(
@@ -187,6 +196,44 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
     """Registers all callbacks for the Dash app."""
     min_year = int(data["year"].min())
     max_year = int(data["year"].max())
+
+    @app.callback(
+        [
+            Output(SINGLE_YEAR_SLIDER_VALUE_ID, "children"),
+            Output(SINGLE_YEAR_SLIDER_VALUE_ID, "style"),
+            *[Output(value_id, "children") for value_id in COMPARE_YEAR_SLIDER_VALUE_IDS],
+            *[Output(value_id, "style") for value_id in COMPARE_YEAR_SLIDER_VALUE_IDS],
+        ],
+        [
+            Input(SINGLE_YEAR_SLIDER_ID, "value"),
+            *[Input(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+        ],
+    )
+    def update_year_slider_labels(
+        single_year: int | None,
+        compare_year_1: int | None,
+        compare_year_2: int | None,
+        compare_year_3: int | None,
+        compare_year_4: int | None,
+    ) -> List[object]:
+        years = [
+            fallback_year(single_year, min_year),
+            fallback_year(compare_year_1, min_year),
+            fallback_year(compare_year_2, min_year),
+            fallback_year(compare_year_3, min_year),
+            fallback_year(compare_year_4, min_year),
+        ]
+        styles = [
+            {"left": year_slider_percent(year, min_year, max_year)}
+            for year in years
+        ]
+
+        return [
+            str(years[0]),
+            styles[0],
+            *[str(year) for year in years[1:]],
+            *styles[1:],
+        ]
 
     @app.callback(
         [

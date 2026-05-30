@@ -1108,6 +1108,128 @@ body {
     padding: 0 10px;
 }
 
+.custom-year-slider {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 4px 0 0;
+}
+
+.custom-slider-shell {
+    position: relative;
+    min-width: 0;
+    height: 32px;
+}
+
+.custom-slider-value-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.custom-slider-input {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 32px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.custom-slider-input:focus {
+    outline: none;
+}
+
+.custom-slider-input::-webkit-slider-runnable-track {
+    height: 7px;
+    border-radius: 999px;
+    background: #8b5cf6;
+}
+
+.custom-slider-input::-moz-range-track {
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(226, 232, 240, 0.5);
+}
+
+.custom-slider-input::-moz-range-progress {
+    height: 7px;
+    border-radius: 999px;
+    background: #8b5cf6;
+}
+
+.custom-slider-input::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+    margin-top: -6.5px;
+    border: 3px solid #ffffff;
+    border-radius: 999px;
+    background: #8b5cf6;
+    box-shadow: 0 0 0 5px rgba(139, 92, 246, 0.28);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.custom-slider-input::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 3px solid #ffffff;
+    border-radius: 999px;
+    background: #8b5cf6;
+    box-shadow: 0 0 0 5px rgba(139, 92, 246, 0.28);
+}
+
+.custom-slider-input:hover::-webkit-slider-thumb,
+.custom-slider-input:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.38);
+}
+
+.custom-slider-input:hover::-moz-range-thumb,
+.custom-slider-input:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.38);
+}
+
+.custom-slider-value {
+    position: absolute;
+    top: 22px;
+    min-width: 42px;
+    padding: 5px 8px;
+    border: 1px solid rgba(147, 197, 253, 0.55);
+    border-radius: 6px;
+    background: #172033;
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.custom-slider-marks {
+    position: relative;
+    height: 16px;
+    margin: 0 10px;
+}
+
+.custom-slider-mark {
+    position: absolute;
+    top: 0;
+    color: #dbeafe;
+    font-size: 10px;
+    font-weight: 600;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
 .year-slider .rc-slider {
     padding: 10px 0 20px;
 }

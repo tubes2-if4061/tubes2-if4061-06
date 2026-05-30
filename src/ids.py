@@ -10,6 +10,13 @@ COMPARE_YEAR_SLIDER_IDS = [
     "compare-year-3-slider",
     "compare-year-4-slider",
 ]
+SINGLE_YEAR_SLIDER_VALUE_ID = "single-year-slider-value"
+COMPARE_YEAR_SLIDER_VALUE_IDS = [
+    "compare-year-1-slider-value",
+    "compare-year-2-slider-value",
+    "compare-year-3-slider-value",
+    "compare-year-4-slider-value",
+]
 COMPARE_YEAR_SLIDER_ROW_IDS = [
     "compare-year-1-slider-row",
     "compare-year-2-slider-row",
