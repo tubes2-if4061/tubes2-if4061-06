@@ -67,7 +67,7 @@ body {
 .dashboard {
     position: relative;
     z-index: 1;
-    width: min(1540px, calc(100vw - 34px));
+    width: min(1540px, 80vw);
     margin: 0 auto;
     padding: 18px 0 28px;
     display: flex;
