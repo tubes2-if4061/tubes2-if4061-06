@@ -1,13 +1,18 @@
 from dash import dcc, html
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from plotly.graph_objs import Figure
+from typing import List, Tuple
 
 from ..ids import (
     COMPARE_MAPS_CONTAINER_ID,
     COMPARE_MAP_VIEW_TOGGLE_ID,
     SINGLE_MAPS_CONTAINER_ID,
     SINGLE_MAP_VIEW_TOGGLE_ID,
+    SINGLE_MAP_CLICK_DATA_ID,
+    SINGLE_MAP_GRAPH_ID,
+    COUNTRY_SANKEY_ID,
 )
 
 
@@ -60,6 +65,7 @@ def single_map_component() -> html.Div:
                 SINGLE_MAP_VIEW_TOGGLE_ID,
                 "globe",
             ),
+            dcc.Graph(id=SINGLE_MAP_GRAPH_ID, style={"display": "none"}),
         ],
     )
 
@@ -178,6 +184,7 @@ def build_choropleth_map(
         color_discrete_map=ATTACK_CATEGORY_COLORS,
         category_orders={"attack_category": ATTACK_CATEGORY_ORDER},
         hover_name="country_txt",
+        custom_data=["n_atk"],
         hover_data={
             "country_iso_3": False,
             "attack_category": False,
@@ -211,6 +218,9 @@ def build_choropleth_map(
     figure.update_geos(
         **geos_config,
     )
+    figure.update_traces(
+        hovertemplate="<b>%{hovertext}</b><br>Total Serangan: %{customdata[0]:,}<extra></extra>",
+    )
     figure.update_layout(
         autosize=True,
         height=height,
@@ -222,6 +232,236 @@ def build_choropleth_map(
     )
 
     return figure
+
+
+def build_country_sankey(
+    data: pd.DataFrame,
+    country_name: str,
+    start_year: int,
+    end_year: int,
+    height: int = 500,
+) -> Figure:
+    range_start = min(start_year, end_year)
+    range_end = max(start_year, end_year)
+
+    country_data = data[
+        (data["country_txt"] == country_name)
+        & (data["year"] >= range_start)
+        & (data["year"] <= range_end)
+    ]
+
+    if len(country_data) == 0:
+        # Return empty figure if no data
+        return go.Figure()
+
+    source = []
+    target = []
+    value = []
+
+    if "attacktype1_txt" in country_data.columns and "targtype1_txt" in country_data.columns:
+        sankey_data = country_data.groupby(["attacktype1_txt", "targtype1_txt"], as_index=False)["n_atk"].sum()
+        attack_types = sankey_data["attacktype1_txt"].unique().tolist()
+        target_types = sankey_data["targtype1_txt"].unique().tolist()
+
+        nodes = [country_name] + attack_types + target_types
+
+        for _, row in sankey_data.iterrows():
+            source.append(nodes.index(country_name))
+            target.append(nodes.index(row["attacktype1_txt"]))
+            value.append(row["n_atk"])
+
+        for _, row in sankey_data.iterrows():
+            source.append(nodes.index(row["attacktype1_txt"]))
+            target.append(nodes.index(row["targtype1_txt"]))
+            value.append(row["n_atk"])
+    else:
+        
+        attack_cols = [c for c in country_data.columns if c.startswith("attacktype_") and c.endswith("_cnt")]
+        target_cols = [c for c in country_data.columns if c.startswith("targettype_") and c.endswith("_cnt")]
+
+        attack_sums = country_data[attack_cols].sum() if attack_cols else pd.Series(dtype=float)
+        target_sums = country_data[target_cols].sum() if target_cols else pd.Series(dtype=float)
+
+        attack_labels = [c.replace("attacktype_", "").replace("_cnt", "").replace("_", " ").title() for c in attack_sums.index]
+        target_labels = [c.replace("targettype_", "").replace("_cnt", "").replace("_", " ").title() for c in target_sums.index]
+
+        attack_types = attack_labels
+        target_types = target_labels
+
+        nodes = [country_name] + attack_labels + target_labels
+
+        total_attack = attack_sums.sum() if not attack_sums.empty else 0
+        total_target = target_sums.sum() if not target_sums.empty else 0
+
+        # country -> attack
+        for idx, cnt in enumerate(attack_sums.values):
+            if cnt <= 0:
+                continue
+            source.append(nodes.index(country_name))
+            target.append(nodes.index(attack_labels[idx]))
+            value.append(float(cnt))
+
+        if total_target > 0 and total_attack > 0:
+            for t_idx, t_cnt in enumerate(target_sums.values):
+                for a_idx, a_cnt in enumerate(attack_sums.values):
+                    if a_cnt <= 0:
+                        continue
+                    link_val = float(t_cnt) * (float(a_cnt) / float(total_attack))
+                    if link_val > 0:
+                        source.append(nodes.index(attack_labels[a_idx]))
+                        target.append(nodes.index(target_labels[t_idx]))
+                        value.append(link_val)
+    
+    sankey_dict = {}
+    for s, t, v in zip(source, target, value):
+        key = (s, t)
+        sankey_dict[key] = sankey_dict.get(key, 0) + v
+    
+    source = [k[0] for k in sankey_dict.keys()]
+    target = [k[1] for k in sankey_dict.keys()]
+    value = list(sankey_dict.values())
+    
+    node_colors = []
+    for node in nodes:
+        if node == country_name:
+            node_colors.append("rgba(203, 24, 29, 0.8)")  # Red for country
+        elif node in attack_types:
+            node_colors.append("rgba(251, 106, 74, 0.8)")  # Orange for attack types
+        else:
+            node_colors.append("rgba(252, 174, 145, 0.8)")  # Light orange for targets
+    
+    fig = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color="black", width=0.5),
+            label=nodes,
+            color=node_colors,
+        ),
+        link=dict(
+            source=source,
+            target=target,
+            value=value,
+            color="rgba(200, 200, 200, 0.4)",
+        )
+    )])
+    
+    fig.update_layout(
+        title=f"Distribusi Serangan di {country_name}",
+        font=dict(size=12, color="#f2f0ee"),
+        paper_bgcolor="rgba(23, 25, 24, 1)",
+        plot_bgcolor="rgba(23, 25, 24, 1)",
+        height=height,
+        margin=dict(l=0, r=0, t=40, b=0),
+    )
+    
+    return fig
+
+
+def country_detail_component(
+    country_name: str,
+    total_attacks: int,
+    organizations: List[Tuple[str, int]],
+) -> html.Div:
+    """Create a detail card showing country information"""
+    return html.Div(
+        className="country-detail-card",
+        children=[
+            html.Div(
+                className="detail-header",
+                children=[
+                    html.H3(country_name, className="country-name"),
+                    html.Span(f"Total Serangan: {total_attacks:,}", className="total-attacks"),
+                ],
+            ),
+            html.Div(
+                className="detail-body",
+                children=[
+                    html.Div(
+                        className="detail-section",
+                        children=[
+                            html.H4("Organisasi Pelaku (Top)", className="section-title"),
+                            html.Div(
+                                className="org-list",
+                                children=[
+                                    html.Span(
+                                        f"{(org[:36] + '...') if len(org) > 39 else org} — {count}",
+                                        className="org-badge",
+                                        title=org,
+                                    )
+                                    for org, count in organizations[:10]
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+
+
+def build_graph2_content(
+    data: pd.DataFrame,
+    country_name: str,
+    start_year: int,
+    end_year: int,
+) -> html.Div:
+    """Build the full Graph2 section with detail and sankey"""
+    range_start = min(start_year, end_year)
+    range_end = max(start_year, end_year)
+    
+    # Get country data
+    country_data = data[
+        (data["country_txt"] == country_name)
+        & (data["year"] >= range_start)
+        & (data["year"] <= range_end)
+    ]
+    
+    if len(country_data) == 0:
+        return html.Div("Data tidak tersedia untuk negara ini", className="no-data-message")
+    
+    total_attacks = int(country_data["n_atk"].sum())
+    
+    if "attacktype1_txt" in country_data.columns:
+        attack_types = country_data["attacktype1_txt"].unique().tolist()
+    else:
+        attack_cols = [c for c in country_data.columns if c.startswith("attacktype_") and c.endswith("_cnt")]
+        if attack_cols:
+            attack_sums = country_data[attack_cols].sum()
+            attack_types = [c.replace("attacktype_", "").replace("_cnt", "").replace("_", " ").title() for c in attack_sums.index if attack_sums[c] > 0]
+        else:
+            attack_types = []
+
+    organizations: List[Tuple[str, int]] = []
+    if "gname_concat" in country_data.columns:
+        all_orgs = []
+        for val in country_data["gname_concat"].dropna().astype(str):
+            parts = [p.strip() for p in val.split(",") if p.strip()]
+            all_orgs.extend(parts)
+        if all_orgs:
+            org_counts = pd.Series(all_orgs).value_counts()
+
+            organizations = [(str(idx), int(val)) for idx, val in org_counts.items()]
+    
+    sankey_fig = build_country_sankey(data, country_name, start_year, end_year)
+    
+    return html.Div(
+        className="graph2-content",
+        children=[
+            html.Div(
+                className="detail-and-sankey",
+                children=[
+                    country_detail_component(country_name, total_attacks, organizations),
+                    dcc.Graph(
+                        id=COUNTRY_SANKEY_ID,
+                        figure=sankey_fig,
+                        className="country-sankey-chart",
+                        config={"displayModeBar": True, "displaylogo": False, "responsive": True},
+                    ),
+                ],
+            ),
+        ],
+    )
 
 def get_top_5_attack_types_data(
     data: pd.DataFrame,
