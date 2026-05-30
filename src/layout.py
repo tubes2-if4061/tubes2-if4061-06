@@ -28,7 +28,7 @@ def summary_cards(data: pd.DataFrame) -> html.Div:
     total_attacks = int(data["n_atk"].sum())
 
     cards = [
-        ("Tahun Tersedia", f"{min_year}-{max_year}"),
+        ("Tahun Tersedia (kecuali 1993)", f"{min_year}-{max_year}"),
         ("Baris Data", f"{total_records:,}"),
         ("Negara", f"{total_countries:,}"),
         ("Total Serangan", f"{total_attacks:,}"),
