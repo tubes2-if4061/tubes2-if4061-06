@@ -170,8 +170,11 @@ body {
 }
 
 .single-mode-layout {
-    grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.85fr);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "map"
+        "sankey";
+    align-items: start;
 }
 
 .single-mode-layout:not(.has-country-detail) {
@@ -180,10 +183,17 @@ body {
 
 .single-mode-layout.has-country-detail {
     grid-template-columns: minmax(0, 1.6fr) minmax(340px, 0.95fr);
+    grid-template-areas:
+        "map detail"
+        "sankey sankey";
+    align-items: stretch;
 }
 
 .compare-mode-layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "map"
+        "lines";
 }
 
 .single-mode-layout > .visualization-section,
@@ -203,8 +213,22 @@ body {
 }
 
 .map-workspace {
+    grid-area: map;
     grid-template-rows: auto auto auto;
     align-content: start;
+}
+
+.sankey-section {
+    grid-area: sankey;
+    min-width: 0;
+}
+
+.graph2-section {
+    grid-area: detail;
+}
+
+.line-graph-workspace {
+    grid-area: lines;
 }
 
 .mode-map-panel {
@@ -417,7 +441,6 @@ body {
 }
 
 .graph2-section {
-    min-height: 100%;
     align-content: start;
     overflow: hidden;
 }
@@ -454,6 +477,11 @@ body {
 .graph2-content,
 .detail-and-sankey {
     min-width: 0;
+}
+
+.single-mode-layout.has-country-detail .graph2-content-container {
+    display: grid;
+    align-items: center;
 }
 
 .graph2-content,
@@ -537,6 +565,10 @@ body {
     min-width: 0;
     overflow: hidden;
     border-radius: 16px;
+}
+
+.sankey-section .country-sankey-chart {
+    min-height: 500px;
 }
 
 .empty-org-message {
@@ -1469,6 +1501,10 @@ body {
 
     .single-mode-layout {
         grid-template-columns: 1fr;
+        grid-template-areas:
+            "map"
+            "detail"
+            "sankey";
     }
 
     .dashboard-controls > .filter-panel {

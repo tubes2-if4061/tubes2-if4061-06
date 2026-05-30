@@ -11,7 +11,7 @@ from .components.map import (
     build_choropleth_map,
     build_top_5_attack_type_line_graph,
     build_top_5_target_type_line_graph,
-    build_graph2_content,
+    build_country_detail_content,
     build_country_sankey,
 )
 from .ids import (
@@ -19,6 +19,8 @@ from .ids import (
     COMPARE_MAP_VIEW_TOGGLE_ID,
     COMPARE_MODE_LAYOUT_ID,
     COUNTRY_DETAIL_CLOSE_BUTTON_ID,
+    COUNTRY_SANKEY_ID,
+    COUNTRY_SANKEY_SECTION_ID,
     COMPARE_COUNT_FILTER_ID,
     COMPARE_YEAR_SLIDER_IDS,
     COMPARE_YEAR_SLIDER_ROW_IDS,
@@ -192,6 +194,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             Output(SINGLE_MODE_LAYOUT_ID, "style"),
             Output(COMPARE_MODE_LAYOUT_ID, "style"),
             Output(GRAPH2_SECTION_ID, "style"),
+            Output(COUNTRY_SANKEY_SECTION_ID, "style"),
             Output(LINE_GRAPH_WORKSPACE_ID, "className"),
         ],
         [
@@ -206,6 +209,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
                 {"display": "none"},
                 {"display": "grid"},
                 {"display": "none"},
+                {"display": "none"},
                 "visualization-section line-graph-workspace is-visible",
             ]
 
@@ -219,6 +223,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             {"display": "grid"},
             {"display": "none"},
             {"display": "grid"} if has_selected_country else {"display": "none"},
+            {"display": "grid"},
             "line-graph-workspace",
         ]
 
@@ -554,11 +559,41 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             end_year = range_end or max_year
         
         try:
-            content = build_graph2_content(data, country_name, start_year, end_year)
+            content = build_country_detail_content(data, country_name, start_year, end_year)
             return content
         except Exception as e:
             error_msg = html.Div(f"Error: {str(e)}", className="error-message")
             return error_msg
+
+    @app.callback(
+        Output(COUNTRY_SANKEY_ID, "figure"),
+        [
+            Input(SINGLE_MAP_CLICK_DATA_ID, "data"),
+            Input(SINGLE_YEAR_SLIDER_ID, "value"),
+            Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Input(YEAR_RANGE_START_IDS[0], "value"),
+            Input(YEAR_RANGE_END_IDS[0], "value"),
+        ],
+    )
+    def update_single_sankey(
+        selected_country,
+        single_year,
+        single_year_mode,
+        range_start,
+        range_end,
+    ) -> Figure:
+        if single_year_mode == "slider":
+            start_year = fallback_year(single_year, min_year)
+            end_year = start_year
+        else:
+            start_year = fallback_year(range_start, min_year)
+            end_year = fallback_year(range_end, max_year)
+
+        country_name = None
+        if selected_country and selected_country.get("country_name"):
+            country_name = selected_country["country_name"]
+
+        return build_country_sankey(data, country_name, start_year, end_year)
 
     @app.callback(
         [

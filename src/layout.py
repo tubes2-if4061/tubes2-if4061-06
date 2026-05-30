@@ -8,6 +8,8 @@ from .components.title import title_component
 from .ids import (
     COMPARE_MODE_LAYOUT_ID,
     COUNTRY_DETAIL_CLOSE_BUTTON_ID,
+    COUNTRY_SANKEY_ID,
+    COUNTRY_SANKEY_SECTION_ID,
     GRAPH2_SECTION_ID,
     LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
@@ -120,6 +122,32 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                             ),
                                             period_controls_component(data),
                                             attack_legend(),
+                                        ],
+                                    ),
+                                    html.Section(
+                                        id=COUNTRY_SANKEY_SECTION_ID,
+                                        className="visualization-section sankey-section",
+                                        style={"display": "none"},
+                                        children=[
+                                            html.Div(
+                                                className="section-heading",
+                                                children=[
+                                                    html.H2(
+                                                        "Alur Jenis Serangan dan Target",
+                                                        className="section-title",
+                                                    ),
+                                                ],
+                                            ),
+                                            dcc.Graph(
+                                                id=COUNTRY_SANKEY_ID,
+                                                className="country-sankey-chart",
+                                                config={
+                                                    "displayModeBar": True,
+                                                    "displaylogo": False,
+                                                    "responsive": True,
+                                                },
+                                                style={"height": "500px", "width": "100%"},
+                                            ),
                                         ],
                                     ),
                                     html.Section(
