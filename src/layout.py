@@ -7,6 +7,7 @@ from .components.map import attack_legend, compare_map_component, single_map_com
 from .components.title import title_component
 from .ids import (
     COMPARE_MODE_LAYOUT_ID,
+    COUNTRY_DETAIL_CLOSE_BUTTON_ID,
     GRAPH2_SECTION_ID,
     LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
@@ -127,17 +128,21 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                         style={"display": "none"},
                                         children=[
                                             html.Div(
-                                                className="section-heading",
+                                                className="section-heading graph2-heading",
                                                 children=[
                                                     html.H2("Detail Negara", className="section-title"),
+                                                    html.Button(
+                                                        "Tutup",
+                                                        id=COUNTRY_DETAIL_CLOSE_BUTTON_ID,
+                                                        className="detail-close-button",
+                                                        n_clicks=0,
+                                                        type="button",
+                                                    ),
                                                 ],
                                             ),
                                             html.Div(
                                                 id="graph2-content-container",
-                                                className="placeholder-card",
-                                                children=[
-                                                    html.Div("Klik pada negara di peta untuk melihat detail", className="placeholder-title"),
-                                                ],
+                                                className="graph2-content-container",
                                             ),
                                         ],
                                     ),

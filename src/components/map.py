@@ -58,6 +58,10 @@ def single_map_component() -> html.Div:
                 className="section-heading",
                 children=[
                     html.H2("Globe Interaktif", className="section-title"),
+                    html.P(
+                        "Klik pada negara di peta untuk melihat detail",
+                        className="section-subtitle map-click-hint",
+                    ),
                 ],
             ),
             map_stage(
@@ -364,14 +368,27 @@ def country_detail_component(
     organizations: List[Tuple[str, int]],
 ) -> html.Div:
     """Create a detail card showing country information"""
+    top_organizations = organizations[:10]
+
     return html.Div(
         className="country-detail-card",
         children=[
             html.Div(
                 className="detail-header",
                 children=[
-                    html.H3(country_name, className="country-name"),
-                    html.Span(f"Total Serangan: {total_attacks:,}", className="total-attacks"),
+                    html.Div(
+                        children=[
+                            html.Div("Negara", className="detail-eyebrow"),
+                            html.H3(country_name, className="country-name"),
+                        ],
+                    ),
+                    html.Div(
+                        className="attack-total-card",
+                        children=[
+                            html.Span("Total Serangan", className="attack-total-label"),
+                            html.Strong(f"{total_attacks:,}", className="attack-total-value"),
+                        ],
+                    ),
                 ],
             ),
             html.Div(
@@ -380,16 +397,33 @@ def country_detail_component(
                     html.Div(
                         className="detail-section",
                         children=[
-                            html.H4("Organisasi Pelaku (Top)", className="section-title"),
+                            html.Div(
+                                className="detail-section-header",
+                                children=[
+                                    html.H4(
+                                        "Organisasi Pelaku Teratas",
+                                        className="detail-section-title",
+                                    ),
+                                    html.Span(
+                                        f"{len(top_organizations)} organisasi",
+                                        className="detail-section-count",
+                                    ),
+                                ],
+                            ),
                             html.Div(
                                 className="org-list",
                                 children=[
                                     html.Span(
-                                        f"{(org[:36] + '...') if len(org) > 39 else org} — {count}",
+                                        f"{(org[:34] + '...') if len(org) > 37 else org} - {count}",
                                         className="org-badge",
                                         title=org,
                                     )
-                                    for org, count in organizations[:10]
+                                    for org, count in top_organizations
+                                ] or [
+                                    html.Span(
+                                        "Tidak ada data organisasi",
+                                        className="empty-org-message",
+                                    ),
                                 ],
                             ),
                         ],

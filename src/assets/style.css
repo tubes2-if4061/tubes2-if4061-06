@@ -174,6 +174,14 @@ body {
     align-items: stretch;
 }
 
+.single-mode-layout:not(.has-country-detail) {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.single-mode-layout.has-country-detail {
+    grid-template-columns: minmax(0, 1.6fr) minmax(340px, 0.95fr);
+}
+
 .compare-mode-layout {
     grid-template-columns: minmax(0, 1fr);
 }
@@ -410,10 +418,130 @@ body {
 
 .graph2-section {
     min-height: 100%;
+    align-content: start;
+    overflow: hidden;
 }
 
 .single-mode-layout .graph2-section {
     grid-template-rows: auto minmax(0, 1fr);
+}
+
+.graph2-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+}
+
+.detail-close-button {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #f7f7f7;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.35px;
+}
+
+.detail-close-button:hover {
+    border-color: rgba(251, 106, 74, 0.55);
+    background: rgba(139, 0, 0, 0.24);
+}
+
+.graph2-content-container,
+.graph2-content,
+.detail-and-sankey {
+    min-width: 0;
+}
+
+.graph2-content,
+.detail-and-sankey {
+    display: grid;
+    gap: 12px;
+}
+
+.country-detail-card {
+    display: grid;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid rgba(188, 205, 243, 0.12);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at top left, rgba(178, 34, 34, 0.22), transparent 34%),
+        rgba(8, 13, 23, 0.58);
+}
+
+.detail-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+}
+
+.detail-eyebrow,
+.attack-total-label,
+.detail-section-count {
+    color: rgba(224, 224, 224, 0.66);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.65px;
+    text-transform: uppercase;
+}
+
+.country-name {
+    margin-top: 3px;
+    color: #ffffff;
+    font-size: clamp(19px, 1.8vw, 26px);
+    line-height: 1.05;
+}
+
+.attack-total-card {
+    display: grid;
+    gap: 4px;
+    min-width: 112px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.075);
+    text-align: right;
+}
+
+.attack-total-value {
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.detail-body,
+.detail-section {
+    display: grid;
+    gap: 10px;
+}
+
+.detail-section-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.detail-section-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.country-sankey-chart {
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+.empty-org-message {
+    color: rgba(224, 224, 224, 0.7);
+    font-size: 13px;
 }
 
 .single-mode-layout .graph2-section .placeholder-card {

@@ -1,6 +1,6 @@
 from flask import app
 
-from dash import Dash, Input, Output, dcc, html, no_update
+from dash import Dash, Input, Output, dcc, html, no_update, ctx
 from dash.exceptions import PreventUpdate
 import pandas as pd
 from typing import Optional, List, Tuple
@@ -18,6 +18,7 @@ from .ids import (
     COMPARE_MAPS_CONTAINER_ID,
     COMPARE_MAP_VIEW_TOGGLE_ID,
     COMPARE_MODE_LAYOUT_ID,
+    COUNTRY_DETAIL_CLOSE_BUTTON_ID,
     COMPARE_COUNT_FILTER_ID,
     COMPARE_YEAR_SLIDER_IDS,
     COMPARE_YEAR_SLIDER_ROW_IDS,
@@ -193,9 +194,12 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             Output(GRAPH2_SECTION_ID, "style"),
             Output(LINE_GRAPH_WORKSPACE_ID, "className"),
         ],
-        Input(MODE_FILTER_ID, "value"),
+        [
+            Input(MODE_FILTER_ID, "value"),
+            Input(SINGLE_MAP_CLICK_DATA_ID, "data"),
+        ],
     )
-    def update_mode_layout(selected_mode: str) -> List[object]:
+    def update_mode_layout(selected_mode: str, selected_country: Optional[dict]) -> List[object]:
         if selected_mode == "compare":
             return [
                 "mode-layout compare-mode-layout",
@@ -204,11 +208,17 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
                 {"display": "none"},
                 "visualization-section line-graph-workspace is-visible",
             ]
+
+        has_selected_country = bool(selected_country and selected_country.get("country_name"))
         return [
-            "mode-layout single-mode-layout",
+            (
+                "mode-layout single-mode-layout has-country-detail"
+                if has_selected_country
+                else "mode-layout single-mode-layout"
+            ),
             {"display": "grid"},
             {"display": "none"},
-            {"display": "grid"},
+            {"display": "grid"} if has_selected_country else {"display": "none"},
             "line-graph-workspace",
         ]
 
@@ -479,26 +489,24 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         )
 
     @app.callback(
-        Output("graph2-content-container", "children"),
+        Output(SINGLE_MAP_CLICK_DATA_ID, "data"),
         [
             Input(f"{SINGLE_MAP_GRAPH_ID}", "clickData"),
-            Input(SINGLE_YEAR_SLIDER_ID, "value"),
-            Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
-            Input(YEAR_RANGE_START_IDS[0], "value"),
-            Input(YEAR_RANGE_END_IDS[0], "value"),
+            Input(COUNTRY_DETAIL_CLOSE_BUTTON_ID, "n_clicks"),
         ],
+        prevent_initial_call=True,
     )
-    def update_graph2_on_country_click(
+    def update_selected_country(
         click_data,
-        single_year,
-        single_year_mode,
-        range_start,
-        range_end,
+        _close_clicks,
     ):
-        """Update Graph2 when a country is clicked on the map"""
+        """Store the selected country, or clear it when the detail panel is closed."""
+        if ctx.triggered_id == COUNTRY_DETAIL_CLOSE_BUTTON_ID:
+            return None
+
         if click_data is None or not click_data.get("points"):
             raise PreventUpdate
-      
+
         clicked_point = click_data["points"][0]
         country_name = clicked_point.get("hovertext") or clicked_point.get("customdata")
 
@@ -511,7 +519,32 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
 
         if not country_name:
             raise PreventUpdate
-        
+
+        return {"country_name": country_name}
+
+    @app.callback(
+        Output("graph2-content-container", "children"),
+        [
+            Input(SINGLE_MAP_CLICK_DATA_ID, "data"),
+            Input(SINGLE_YEAR_SLIDER_ID, "value"),
+            Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Input(YEAR_RANGE_START_IDS[0], "value"),
+            Input(YEAR_RANGE_END_IDS[0], "value"),
+        ],
+    )
+    def update_graph2_on_country_click(
+        selected_country,
+        single_year,
+        single_year_mode,
+        range_start,
+        range_end,
+    ):
+        """Update Graph2 when a country is selected on the map."""
+        if not selected_country or not selected_country.get("country_name"):
+            return []
+
+        country_name = selected_country["country_name"]
+
         # Determine year range
         if single_year_mode == "slider":
             start_year = single_year

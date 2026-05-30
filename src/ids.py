@@ -54,4 +54,5 @@ YEAR_RANGE_ROW_IDS = [
 SINGLE_MAP_CLICK_DATA_ID = "single-map-click-data"
 SINGLE_MAP_GRAPH_ID = "single-map-1"
 COUNTRY_DETAIL_CONTAINER_ID = "country-detail-container"
+COUNTRY_DETAIL_CLOSE_BUTTON_ID = "country-detail-close-button"
 COUNTRY_SANKEY_ID = "country-sankey"
