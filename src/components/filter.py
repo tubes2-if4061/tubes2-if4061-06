@@ -1,5 +1,6 @@
 from dash import dcc, html
 import pandas as pd
+from typing import List, Dict
 
 from ..ids import (
     COMPARE_COUNT_FILTER_ID,
@@ -45,7 +46,7 @@ COMPARE_YEAR_DEFAULTS = {
 }
 
 
-def year_dropdown(dropdown_id: str, years: list[int], value: int) -> dcc.Input:
+def year_dropdown(dropdown_id: str, years: List[int], value: int) -> dcc.Input:
     return dcc.Input(
         id=dropdown_id,
         type="number",
@@ -57,7 +58,7 @@ def year_dropdown(dropdown_id: str, years: list[int], value: int) -> dcc.Input:
 
 def year_range_row(
     row_index: int,
-    years: list[int],
+    years: List[int],
     default_start_year: int,
     default_end_year: int,
     is_visible: bool,
@@ -94,7 +95,7 @@ def year_range_row(
     )
 
 
-def slider_marks(years: list[int]) -> dict[int, str]:
+def slider_marks(years: List[int]) -> Dict[int, str]:
     decade_marks = {
         int(year): str(year)
         for year in years
@@ -103,7 +104,7 @@ def slider_marks(years: list[int]) -> dict[int, str]:
     return decade_marks
 
 
-def single_year_slider_row(years: list[int], default_year: int) -> html.Div:
+def single_year_slider_row(years: List[int], default_year: int) -> html.Div:
     return html.Div(
         id=SINGLE_YEAR_SLIDER_ROW_ID,
         className="year-slider-row single-year-slider-row",
@@ -133,7 +134,7 @@ def single_year_slider_row(years: list[int], default_year: int) -> html.Div:
 
 def compare_year_slider_row(
     row_index: int,
-    years: list[int],
+    years: List[int],
     default_year: int,
 ) -> html.Div:
     return html.Div(
