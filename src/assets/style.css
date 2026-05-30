@@ -96,6 +96,9 @@ body {
 .dashboard-title {
     font-size: clamp(30px, 2.2vw, 38px);
     color: #ffffff;
+    font-family: "Arial Black", "Segoe UI", Arial, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.2px;
 }
 
 .dashboard-subtitle {
@@ -106,27 +109,29 @@ body {
 .summary-row {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
 }
 
 .summary-card {
-    padding: 10px 12px;
-    border-radius: 12px;
+    padding: 8px 10px;
+    border-radius: 10px;
     border: 1px solid rgba(188, 205, 243, 0.12);
     background: rgba(15, 24, 39, 0.96);
     box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+    display: grid;
+    gap: 2px;
 }
 
 .summary-value {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
     color: #ffffff;
     line-height: 1.1;
 }
 
 .summary-label {
-    margin-top: 3px;
-    font-size: 12px;
+    margin-top: 0;
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.84);
 }
 
@@ -485,7 +490,18 @@ body {
 
 .single-mode-layout.has-country-detail .graph2-content-container {
     display: grid;
-    align-items: center;
+    align-items: start;
+}
+
+.single-mode-layout.has-country-detail .graph2-content {
+    align-self: start;
+}
+
+.single-mode-layout.has-country-detail .country-detail-card {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    align-self: start;
 }
 .compare-map-section > .section-heading {
     display: flex;
@@ -575,6 +591,13 @@ body {
 .detail-section {
     display: grid;
     gap: 10px;
+}
+
+.single-mode-layout.has-country-detail .detail-body,
+.single-mode-layout.has-country-detail .detail-section,
+.single-mode-layout.has-country-detail .org-list {
+    align-content: start;
+    justify-content: start;
 }
 
 .detail-section-header {
