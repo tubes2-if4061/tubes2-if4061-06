@@ -1394,6 +1394,8 @@ body {
     box-shadow: none;
     font: inherit;
     outline: none;
+    text-align: center;
+    -moz-appearance: textfield;
 }
 
 .year-input:hover,
@@ -1411,7 +1413,8 @@ body {
 
 .year-input::-webkit-outer-spin-button,
 .year-input::-webkit-inner-spin-button {
-    opacity: 0.55;
+    margin: 0;
+    -webkit-appearance: none;
 }
 
 .compare-count-filter {
@@ -1643,7 +1646,7 @@ body {
 }
 
 .period-controls .year-range-row {
-    grid-template-columns: minmax(58px, 0.85fr) minmax(64px, 1fr) minmax(64px, 1fr);
+    grid-template-columns: repeat(2, minmax(64px, 1fr));
     gap: 7px;
     min-width: 0;
     padding: 7px 8px 8px;
@@ -1681,6 +1684,7 @@ body {
     gap: 3px;
     font-size: 10px;
     letter-spacing: 0.45px;
+    text-align: center;
 }
 
 .period-controls .year-input {
@@ -1688,6 +1692,7 @@ body {
     padding: 0 8px;
     border-radius: 8px;
     font-size: 12px;
+    text-align: center !important;
 }
 
 .period-controls .year-slider .rc-slider {

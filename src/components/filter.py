@@ -51,10 +51,12 @@ COMPARE_YEAR_DEFAULTS = {
 def year_dropdown(dropdown_id: str, years: List[int], value: int) -> dcc.Input:
     return dcc.Input(
         id=dropdown_id,
-        type="number",
-        step=1,
+        type="text",
+        inputMode="numeric",
+        pattern="[0-9]*",
         value=value,
         className="year-input",
+        style={"textAlign": "center"},
     )
 
 
@@ -70,7 +72,6 @@ def year_range_row(
         className="year-range-row",
         style={"display": "grid"} if is_visible else {"display": "none"},
         children=[
-            html.Div(f"Rentang {row_index + 1}", className="range-label"),
             html.Label(
                 className="field-label",
                 children=[
