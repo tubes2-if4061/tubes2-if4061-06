@@ -1,10 +1,15 @@
+from flask import app
+
 from dash import Dash, Input, Output, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 import pandas as pd
+from plotly.graph_objs import Figure
 
 from .components.filter import COMPARE_YEAR_DEFAULTS, COMPARE_YEAR_RANGE_DEFAULTS
 from .components.map import (
     build_choropleth_map,
+    build_top_5_attack_type_line_graph,
+    build_top_5_target_type_line_graph,
 )
 from .ids import (
     COMPARE_MAPS_CONTAINER_ID,
@@ -14,7 +19,7 @@ from .ids import (
     COMPARE_YEAR_SLIDER_IDS,
     COMPARE_YEAR_SLIDER_ROW_IDS,
     GRAPH2_SECTION_ID,
-    GRAPH3_SECTION_ID,
+    LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
     MODE_FILTER_ID,
     PERIOD_CONTROLS_GRID_ID,
@@ -25,6 +30,8 @@ from .ids import (
     SINGLE_YEAR_MODE_FILTER_ID,
     SINGLE_YEAR_SLIDER_ID,
     SINGLE_YEAR_SLIDER_ROW_ID,
+    TOP_5_ATTACK_TYPE_GRAPH_ID,
+    TOP_5_TARGET_TYPE_GRAPH_ID,
     YEAR_RANGE_ERROR_ID,
     YEAR_RANGE_END_IDS,
     YEAR_RANGE_ROW_IDS,
@@ -179,7 +186,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             Output(SINGLE_MODE_LAYOUT_ID, "style"),
             Output(COMPARE_MODE_LAYOUT_ID, "style"),
             Output(GRAPH2_SECTION_ID, "style"),
-            Output(GRAPH3_SECTION_ID, "style"),
+            Output(LINE_GRAPH_WORKSPACE_ID, "className"),
         ],
         Input(MODE_FILTER_ID, "value"),
     )
@@ -190,14 +197,14 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
                 {"display": "none"},
                 {"display": "grid"},
                 {"display": "none"},
-                {"display": "grid"},
+                "visualization-section line-graph-workspace is-visible",
             ]
         return [
             "mode-layout single-mode-layout",
             {"display": "grid"},
             {"display": "none"},
             {"display": "grid"},
-            {"display": "none"},
+            "line-graph-workspace",
         ]
 
     @app.callback(
@@ -465,3 +472,82 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             min_year,
             max_year,
         )
+
+    @app.callback(
+        [
+            Output(TOP_5_ATTACK_TYPE_GRAPH_ID, "figure"),
+            Output(TOP_5_TARGET_TYPE_GRAPH_ID, "figure"),
+        ],
+        [
+            Input(MODE_FILTER_ID, "value"),
+            Input(COMPARE_COUNT_FILTER_ID, "value"),
+            Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Input(SINGLE_YEAR_SLIDER_ID, "value"),
+            *[Input(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+            Input(YEAR_RANGE_START_IDS[0], "value"),
+            Input(YEAR_RANGE_END_IDS[0], "value"),
+            Input(YEAR_RANGE_START_IDS[1], "value"),
+            Input(YEAR_RANGE_END_IDS[1], "value"),
+            Input(YEAR_RANGE_START_IDS[2], "value"),
+            Input(YEAR_RANGE_END_IDS[2], "value"),
+            Input(YEAR_RANGE_START_IDS[3], "value"),
+            Input(YEAR_RANGE_END_IDS[3], "value"),
+        ],
+    )
+    def update_both_line_graphs(
+        selected_mode: str,
+        compare_count: int,
+        single_year_mode: str,
+        single_year: int | None,
+        compare_year_1: int | None,
+        compare_year_2: int | None,
+        compare_year_3: int | None,
+        compare_year_4: int | None,
+        start_year_1: int | None,
+        end_year_1: int | None,
+        start_year_2: int | None,
+        end_year_2: int | None,
+        start_year_3: int | None,
+        end_year_3: int | None,
+        start_year_4: int | None,
+        end_year_4: int | None,
+    ) -> tuple[Figure, Figure]:
+        
+        year_ranges = []
+        
+        if selected_mode == "single":
+            raise PreventUpdate
+        
+        else:
+            visible_count = visible_range_count(selected_mode, compare_count)
+            
+            if single_year_mode == "slider":
+                raw_ranges = [
+                    (compare_year_1, compare_year_1),
+                    (compare_year_2, compare_year_2),
+                    (compare_year_3, compare_year_3),
+                    (compare_year_4, compare_year_4),
+                ]
+            else:
+                raw_ranges = [
+                    (start_year_1, end_year_1),
+                    (start_year_2, end_year_2),
+                    (start_year_3, end_year_3),
+                    (start_year_4, end_year_4),
+                ]
+            
+            for i in range(visible_count):
+                s_raw, e_raw = raw_ranges[i]
+                s_clean = fallback_year(s_raw, min_year)
+                e_clean = fallback_year(e_raw, max_year)
+                
+                if e_clean >= s_clean:
+                    year_ranges.append((s_clean, e_clean))
+            
+            if not year_ranges:
+                raise PreventUpdate
+
+        fig_attack = build_top_5_attack_type_line_graph(data, year_ranges)
+        fig_target = build_top_5_target_type_line_graph(data, year_ranges)
+
+        return fig_attack, fig_target

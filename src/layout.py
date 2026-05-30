@@ -1,4 +1,4 @@
-from dash import html
+from dash import dcc, html
 import pandas as pd
 
 from .components.filter import filter_component, period_controls_component
@@ -7,9 +7,11 @@ from .components.title import title_component
 from .ids import (
     COMPARE_MODE_LAYOUT_ID,
     GRAPH2_SECTION_ID,
-    GRAPH3_SECTION_ID,
+    LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
     SINGLE_MODE_LAYOUT_ID,
+    TOP_5_ATTACK_TYPE_GRAPH_ID,
+    TOP_5_TARGET_TYPE_GRAPH_ID,
 )
 
 
@@ -123,13 +125,36 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                         section_id=GRAPH2_SECTION_ID,
                                         style={"display": "none"},
                                     ),
-                                    graph_placeholder(
-                                        "Graph 3",
-                                        "graph3-section",
-                                        "placeholder-card graph3-card",
-                                        section_id=GRAPH3_SECTION_ID,
-                                        style={"display": "grid"},
+                            html.Div(
+                                id=LINE_GRAPH_WORKSPACE_ID,
+                                className="visualization-section line-graph-workspace",
+                                children=[
+                                    html.Div(
+                                        className="graph-card",
+                                        children=[
+                                            html.H3("Top 5 Jenis Serangan", className="graph-title"),
+                                            dcc.Graph(
+                                                id=TOP_5_ATTACK_TYPE_GRAPH_ID,
+                                                className="line-graph",
+                                                config={"displayModeBar": False},
+                                                style={"height": "350px", "width": "100%"},
+                                            )
+                                        ],
                                     ),
+                                    html.Div(
+                                        className="graph-card",
+                                        children=[
+                                            html.H3("Top 5 Target Serangan", className="graph-title"),
+                                            dcc.Graph(
+                                                id=TOP_5_TARGET_TYPE_GRAPH_ID,
+                                                className="line-graph",
+                                                config={"displayModeBar": False},
+                                                style={"height": "350px", "width": "100%"},
+                                            )
+                                        ],
+                                    ),
+                                ]
+                            )
                                 ],
                             ),
                         ],
