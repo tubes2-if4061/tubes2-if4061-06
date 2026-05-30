@@ -1,10 +1,13 @@
 from dash import Dash, Input, Output, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 import pandas as pd
+from typing import Optional, List, Tuple
 
 from .components.filter import COMPARE_YEAR_DEFAULTS, COMPARE_YEAR_RANGE_DEFAULTS
 from .components.map import (
     build_choropleth_map,
+    build_graph2_content,
+    build_country_sankey,
 )
 from .ids import (
     COMPARE_MAPS_CONTAINER_ID,
@@ -29,10 +32,12 @@ from .ids import (
     YEAR_RANGE_END_IDS,
     YEAR_RANGE_ROW_IDS,
     YEAR_RANGE_START_IDS,
+    SINGLE_MAP_CLICK_DATA_ID,
+    SINGLE_MAP_GRAPH_ID,
 )
 
 
-def visible_range_count(mode: str, compare_count: int | None) -> int:
+def visible_range_count(mode: str, compare_count: Optional[int]) -> int:
     if mode != "compare":
         return 1
 
@@ -46,18 +51,18 @@ def visible_range_count(mode: str, compare_count: int | None) -> int:
     return normalized_compare_count
 
 
-def fallback_year(value: int | None, fallback: int) -> int:
+def fallback_year(value: Optional[int], fallback: int) -> int:
     if value is None:
         return fallback
     return int(value)
 
 
 def validate_year_ranges(
-    year_ranges: list[tuple[int | None, int | None]],
+    year_ranges: List[Tuple[Optional[int], Optional[int]]],
     visible_count: int,
     min_year: int,
     max_year: int,
-) -> tuple[list[str], set[int], set[int]]:
+) -> Tuple[List[str], set, set]:
     order_invalid_labels = []
     bounds_invalid_labels = []
     invalid_start_indices = set()
@@ -99,9 +104,9 @@ def validate_year_ranges(
 
 
 def year_input_class_names(
-    invalid_start_indices: set[int],
-    invalid_end_indices: set[int],
-) -> list[str]:
+    invalid_start_indices: set,
+    invalid_end_indices: set,
+) -> List[str]:
     start_class_names = [
         "year-input year-input-invalid"
         if index in invalid_start_indices
@@ -128,7 +133,7 @@ def map_height(map_count: int) -> int:
 
 def build_maps_section(
     data: pd.DataFrame,
-    year_ranges: list[tuple[int | None, int | None]],
+    year_ranges: List[Tuple[Optional[int], Optional[int]]],
     graph_height: int,
     selected_map_view: str,
     graph_id_prefix: str,
@@ -183,7 +188,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         ],
         Input(MODE_FILTER_ID, "value"),
     )
-    def update_mode_layout(selected_mode: str) -> list[object]:
+    def update_mode_layout(selected_mode: str) -> List[object]:
         if selected_mode == "compare":
             return [
                 "mode-layout compare-mode-layout",
@@ -214,7 +219,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
     def sync_compare_default_ranges(
         selected_mode: str,
         compare_count: int,
-    ) -> list[int | object]:
+    ) -> List:
         if selected_mode != "compare":
             return [no_update] * (
                 len(YEAR_RANGE_START_IDS)
@@ -277,7 +282,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         end_year_3: int,
         start_year_4: int,
         end_year_4: int,
-    ) -> list[object]:
+    ) -> List[object]:
         visible_count = visible_range_count(selected_mode, compare_count)
         year_ranges = [
             (start_year_1, end_year_1),
@@ -465,3 +470,52 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             min_year,
             max_year,
         )
+
+    @app.callback(
+        Output("graph2-content-container", "children"),
+        [
+            Input(f"{SINGLE_MAP_GRAPH_ID}", "clickData"),
+            Input(SINGLE_YEAR_SLIDER_ID, "value"),
+            Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Input(YEAR_RANGE_START_IDS[0], "value"),
+            Input(YEAR_RANGE_END_IDS[0], "value"),
+        ],
+    )
+    def update_graph2_on_country_click(
+        click_data,
+        single_year,
+        single_year_mode,
+        range_start,
+        range_end,
+    ):
+        """Update Graph2 when a country is clicked on the map"""
+        if click_data is None or not click_data.get("points"):
+            raise PreventUpdate
+      
+        clicked_point = click_data["points"][0]
+        country_name = clicked_point.get("hovertext") or clicked_point.get("customdata")
+
+        if not country_name:
+            iso3 = clicked_point.get("location")
+            if iso3:
+                row = data[data["country_iso_3"] == iso3]
+                if not row.empty:
+                    country_name = row.iloc[0]["country_txt"]
+
+        if not country_name:
+            raise PreventUpdate
+        
+        # Determine year range
+        if single_year_mode == "slider":
+            start_year = single_year
+            end_year = single_year
+        else:
+            start_year = range_start or min_year
+            end_year = range_end or max_year
+        
+        try:
+            content = build_graph2_content(data, country_name, start_year, end_year)
+            return content
+        except Exception as e:
+            error_msg = html.Div(f"Error: {str(e)}", className="error-message")
+            return error_msg

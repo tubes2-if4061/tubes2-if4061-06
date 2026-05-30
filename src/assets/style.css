@@ -11,6 +11,28 @@
     --bg-main: #0d0d0d;
 }
 
+
+.org-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.org-badge {
+    display: inline-block;
+    padding: 6px 10px;
+    background: rgba(139, 0, 0, 0.14);
+    color: #fff;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;

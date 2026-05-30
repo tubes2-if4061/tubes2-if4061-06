@@ -6,7 +6,7 @@ from .layout import create_layout
 from .utils.data_loader import load_terrorism_data
 
 def create_app() -> Dash:
-    app = Dash(__name__)
+    app = Dash(__name__, suppress_callback_exceptions=True)
     data = load_terrorism_data()
 
     app.index_string = REMOVE_BODY_MARGIN

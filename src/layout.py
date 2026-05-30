@@ -1,5 +1,6 @@
-from dash import html
+from dash import html, dcc
 import pandas as pd
+from typing import Optional, Dict
 
 from .components.filter import filter_component, period_controls_component
 from .components.map import attack_legend, compare_map_component, single_map_component
@@ -10,6 +11,7 @@ from .ids import (
     GRAPH3_SECTION_ID,
     MODE_LAYOUT_ID,
     SINGLE_MODE_LAYOUT_ID,
+    SINGLE_MAP_CLICK_DATA_ID,
 )
 
 
@@ -46,8 +48,8 @@ def graph_placeholder(
     title: str,
     section_class_name: str,
     card_class_name: str = "placeholder-card",
-    section_id: str | None = None,
-    style: dict[str, str] | None = None,
+    section_id: Optional[str] = None,
+    style: Optional[Dict[str, str]] = None,
 ) -> html.Div:
     return html.Div(
         id=section_id,
@@ -117,12 +119,27 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                             attack_legend(),
                                         ],
                                     ),
-                                    graph_placeholder(
-                                        "Graph 2",
-                                        "graph2-section",
-                                        section_id=GRAPH2_SECTION_ID,
+                                    html.Section(
+                                        id=GRAPH2_SECTION_ID,
+                                        className="visualization-section graph2-section",
                                         style={"display": "none"},
+                                        children=[
+                                            html.Div(
+                                                className="section-heading",
+                                                children=[
+                                                    html.H2("Detail Negara", className="section-title"),
+                                                ],
+                                            ),
+                                            html.Div(
+                                                id="graph2-content-container",
+                                                className="placeholder-card",
+                                                children=[
+                                                    html.Div("Klik pada negara di peta untuk melihat detail", className="placeholder-title"),
+                                                ],
+                                            ),
+                                        ],
                                     ),
+                                    dcc.Store(id=SINGLE_MAP_CLICK_DATA_ID),
                                     graph_placeholder(
                                         "Graph 3",
                                         "graph3-section",
