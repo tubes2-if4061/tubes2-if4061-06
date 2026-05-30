@@ -84,16 +84,6 @@ def create_layout(data: pd.DataFrame) -> html.Div:
             html.Div(
                 className="app-layout",
                 children=[
-                    html.Aside(
-                        className="sidebar-nav",
-                        children=[
-                            html.Div("TG", className="sidebar-logo"),
-                            html.Div("MAP", className="nav-item nav-item-active"),
-                            html.Div("G2", className="nav-item"),
-                            html.Div("G3", className="nav-item"),
-                            html.Div("SET", className="nav-item"),
-                        ],
-                    ),
                     html.Div(
                         className="dashboard",
                         children=[

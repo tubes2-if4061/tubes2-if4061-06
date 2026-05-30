@@ -38,11 +38,16 @@ def map_view_toggle(toggle_id: str, default_view: str) -> dcc.RadioItems:
     )
 
 
-def map_stage(container_id: str, toggle_id: str, default_view: str) -> html.Div:
+def map_stage(
+    container_id: str,
+    toggle_id: str,
+    default_view: str,
+    show_toggle: bool = True,
+) -> html.Div:
     return html.Div(
         className="maps-stage",
         children=[
-            map_view_toggle(toggle_id, default_view),
+            map_view_toggle(toggle_id, default_view) if show_toggle else None,
             html.Div(id=container_id, className="maps-container"),
         ],
     )
@@ -53,19 +58,26 @@ def single_map_component() -> html.Div:
         className="mode-map-panel single-map-section",
         children=[
             html.Div(
-                className="section-heading",
+                className="section-heading map-heading-row",
                 children=[
-                    html.H2("Globe Interaktif", className="section-title"),
-                    html.P(
-                        "Klik pada negara di peta untuk melihat detail",
-                        className="section-subtitle map-click-hint",
+                    html.Div(
+                        className="map-heading-copy",
+                        children=[
+                            html.H2("Globe Interaktif", className="section-title"),
+                            html.P(
+                                "Klik pada negara di peta untuk melihat detail",
+                                className="section-subtitle map-click-hint",
+                            ),
+                        ],
                     ),
+                    map_view_toggle(SINGLE_MAP_VIEW_TOGGLE_ID, "globe"),
                 ],
             ),
             map_stage(
                 SINGLE_MAPS_CONTAINER_ID,
                 SINGLE_MAP_VIEW_TOGGLE_ID,
                 "globe",
+                show_toggle=False,
             ),
             dcc.Graph(id=SINGLE_MAP_GRAPH_ID, style={"display": "none"}),
         ],
@@ -77,15 +89,22 @@ def compare_map_component() -> html.Div:
         className="mode-map-panel compare-map-section",
         children=[
             html.Div(
-                className="section-heading",
+                className="section-heading compare-map-heading-row",
                 children=[
-                    html.H2("Peta Perbandingan", className="section-title"),
+                    html.Div(
+                        className="compare-map-heading-copy",
+                        children=[
+                            html.H2("Peta Perbandingan", className="section-title"),
+                        ],
+                    ),
+                    map_view_toggle(COMPARE_MAP_VIEW_TOGGLE_ID, "choropleth"),
                 ],
             ),
             map_stage(
                 COMPARE_MAPS_CONTAINER_ID,
                 COMPARE_MAP_VIEW_TOGGLE_ID,
                 "choropleth",
+                show_toggle=False,
             ),
         ],
     )
