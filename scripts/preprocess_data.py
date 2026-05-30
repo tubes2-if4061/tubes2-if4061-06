@@ -14,6 +14,8 @@ INPUT_COLUMNS = [
     "country",
     "country_txt",
     "gname",
+    "nkill",
+    "nwound",
     "attacktype1_txt",
     "targtype1_txt",
 ]
@@ -230,15 +232,21 @@ def build_category_columns(
 def aggregate_data(df: pd.DataFrame) -> pd.DataFrame:
     attack_type_values = unique_sorted_values(df["attacktype1_txt"])
     target_type_values = unique_sorted_values(df["targtype1_txt"])
+    df = df.copy()
+    df["nkill"] = df["nkill"].fillna(0)
+    df["nwound"] = df["nwound"].fillna(0)
 
     base = (
         df.groupby(GROUP_COLUMNS)
         .agg(
             n_atk=("year", "size"),
+            n_kill=("nkill", "sum"),
+            n_wound=("nwound", "sum"),
             gname_concat=("gname", concat_unique_values),
         )
         .reset_index()
     )
+    base[["n_kill", "n_wound"]] = base[["n_kill", "n_wound"]].round().astype("int64")
 
     attack_type_df = build_category_columns(
         df,
@@ -276,7 +284,16 @@ def process_data(file_path: str, output_path: str = "data/data.csv") -> pd.DataF
     aggregated_df = aggregate_data(df)
     aggregated_df = add_country_iso3_column(aggregated_df)
 
-    front_columns = ["year", "country", "country_txt", "country_iso_3", "n_atk", "gname_concat"]
+    front_columns = [
+        "year",
+        "country",
+        "country_txt",
+        "country_iso_3",
+        "n_atk",
+        "n_kill",
+        "n_wound",
+        "gname_concat",
+    ]
     other_columns = [column for column in aggregated_df.columns if column not in front_columns]
     aggregated_df = aggregated_df[front_columns + other_columns]
 

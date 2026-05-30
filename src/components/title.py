@@ -2,9 +2,8 @@ from dash import html
 
 def title_component() -> html.Header:
     return html.Header(
-        className="dashboard-header",
+        className="dashboard-header dashboard-header-center",
         children=[
-
             html.Div(
                 className="title-block",
                 children=[

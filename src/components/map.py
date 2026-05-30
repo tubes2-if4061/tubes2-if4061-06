@@ -10,39 +10,49 @@ from ..ids import (
     COMPARE_MAP_VIEW_TOGGLE_ID,
     SINGLE_MAPS_CONTAINER_ID,
     SINGLE_MAP_VIEW_TOGGLE_ID,
-    SINGLE_MAP_GRAPH_ID,
 )
 
 
 ATTACK_CATEGORY_COLORS = {
-    ">= 1000": "#cb181d",
+    "≥1000": "#cb181d",
     "100-999": "#fb6a4a",
     "10-99": "#fcae91",
-    "< 10": "#ffe5dc",
+    "<10": "#ffe5dc",
 }
 ATTACK_CATEGORY_ORDER = list(ATTACK_CATEGORY_COLORS.keys())
 UNREGISTERED_COUNTRY_COLOR = "#e7e8e8"
 
 
-def map_view_toggle(toggle_id: str, default_view: str) -> dcc.RadioItems:
-    return dcc.RadioItems(
-        id=toggle_id,
-        options=[
-            {"label": "Globe", "value": "globe"},
-            {"label": "Choropleth", "value": "choropleth"},
+def map_view_toggle(toggle_id: str, default_view: str) -> html.Div:
+    return html.Div(
+        className="map-view-control",
+        children=[
+            html.Span("Tampilan", className="map-view-control-label"),
+            dcc.RadioItems(
+                id=toggle_id,
+                options=[
+                    {"label": "Globe", "value": "globe"},
+                    {"label": "Peta", "value": "choropleth"},
+                ],
+                value=default_view,
+                className="map-view-toggle",
+                inputClassName="map-view-input",
+                labelClassName="map-view-option",
+            ),
         ],
-        value=default_view,
-        className="map-view-toggle",
-        inputClassName="map-view-input",
-        labelClassName="map-view-option",
     )
 
 
-def map_stage(container_id: str, toggle_id: str, default_view: str) -> html.Div:
+def map_stage(
+    container_id: str,
+    toggle_id: str,
+    default_view: str,
+    show_toggle: bool = True,
+) -> html.Div:
     return html.Div(
         className="maps-stage",
         children=[
-            map_view_toggle(toggle_id, default_view),
+            map_view_toggle(toggle_id, default_view) if show_toggle else None,
             html.Div(id=container_id, className="maps-container"),
         ],
     )
@@ -53,21 +63,27 @@ def single_map_component() -> html.Div:
         className="mode-map-panel single-map-section",
         children=[
             html.Div(
-                className="section-heading",
+                className="section-heading map-heading-row",
                 children=[
-                    html.H2("Globe Interaktif", className="section-title"),
-                    html.P(
-                        "Klik pada negara di peta untuk melihat detail",
-                        className="section-subtitle map-click-hint",
+                    html.Div(
+                        className="map-heading-copy",
+                        children=[
+                            html.H2("Globe Interaktif", className="section-title"),
+                            html.P(
+                                "Klik pada negara di peta untuk melihat detail",
+                                className="section-subtitle map-click-hint",
+                            ),
+                        ],
                     ),
+                    map_view_toggle(SINGLE_MAP_VIEW_TOGGLE_ID, "globe"),
                 ],
             ),
             map_stage(
                 SINGLE_MAPS_CONTAINER_ID,
                 SINGLE_MAP_VIEW_TOGGLE_ID,
                 "globe",
+                show_toggle=False,
             ),
-            dcc.Graph(id=SINGLE_MAP_GRAPH_ID, style={"display": "none"}),
         ],
     )
 
@@ -77,15 +93,22 @@ def compare_map_component() -> html.Div:
         className="mode-map-panel compare-map-section",
         children=[
             html.Div(
-                className="section-heading",
+                className="section-heading compare-map-heading-row",
                 children=[
-                    html.H2("Peta Perbandingan", className="section-title"),
+                    html.Div(
+                        className="compare-map-heading-copy",
+                        children=[
+                            html.H2("Peta Perbandingan", className="section-title"),
+                        ],
+                    ),
+                    map_view_toggle(COMPARE_MAP_VIEW_TOGGLE_ID, "choropleth"),
                 ],
             ),
             map_stage(
                 COMPARE_MAPS_CONTAINER_ID,
                 COMPARE_MAP_VIEW_TOGGLE_ID,
                 "choropleth",
+                show_toggle=False,
             ),
         ],
     )
@@ -93,14 +116,14 @@ def compare_map_component() -> html.Div:
 
 def attack_legend() -> html.Div:
     legend_items = [
-        ("Not registered", UNREGISTERED_COUNTRY_COLOR),
+        ("Tidak ada data", UNREGISTERED_COUNTRY_COLOR),
         *reversed(list(ATTACK_CATEGORY_COLORS.items())),
     ]
 
     return html.Div(
         className="map-legend",
         children=[
-            html.Div("Attacks", className="map-legend-title"),
+            html.Div("Kategori Jumlah Serangan", className="map-legend-title"),
             *[
                 html.Div(
                     className="map-legend-item",
@@ -120,12 +143,12 @@ def attack_legend() -> html.Div:
 
 def attack_category(n_atk: int) -> str:
     if n_atk >= 1000:
-        return ">= 1000"
+        return "≥1000"
     if n_atk >= 100:
         return "100-999"
     if n_atk >= 10:
         return "10-99"
-    return "< 10"
+    return "<10"
 
 
 def aggregate_attacks_by_country(
@@ -246,6 +269,29 @@ def build_country_sankey(
     range_start = min(start_year, end_year)
     range_end = max(start_year, end_year)
 
+    def empty_sankey_figure(message: str) -> Figure:
+        figure = go.Figure()
+        figure.add_annotation(
+            text=message,
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            align="center",
+            font={"size": 15, "color": "#e0e0e0"},
+        )
+        figure.update_layout(
+            font=dict(size=12, color="#f2f0ee"),
+            paper_bgcolor="rgba(0, 0, 0, 0)",
+            plot_bgcolor="rgba(0, 0, 0, 0)",
+            height=height,
+            margin=dict(l=0, r=0, t=20, b=0),
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+        )
+        return figure
+
     filtered_data = data[
         (data["year"] >= range_start)
         & (data["year"] <= range_end)
@@ -258,8 +304,9 @@ def build_country_sankey(
         country_data = filtered_data
 
     if len(country_data) == 0:
-        # Return empty figure if no data
-        return go.Figure()
+        return empty_sankey_figure(
+            f"Tidak ada data untuk {root_label}<br>pada periode {range_start}-{range_end}."
+        )
 
     source = []
     target = []
@@ -327,6 +374,12 @@ def build_country_sankey(
     source = [k[0] for k in sankey_dict.keys()]
     target = [k[1] for k in sankey_dict.keys()]
     value = list(sankey_dict.values())
+    hover_value = [int(round(link_value)) for link_value in value]
+
+    if not value:
+        return empty_sankey_figure(
+            f"Tidak ada data untuk {root_label}<br>pada periode {range_start}-{range_end}."
+        )
     
     node_colors = []
     for node in nodes:
@@ -344,12 +397,24 @@ def build_country_sankey(
             line=dict(color="black", width=0.5),
             label=nodes,
             color=node_colors,
+            hovertemplate=(
+                "<b>%{label}</b><br>"
+                "Total arus masuk: %{value:,}<br>"
+                "Total arus keluar: %{value:,}"
+                "<extra></extra>"
+            ),
         ),
         link=dict(
             source=source,
             target=target,
             value=value,
             color="rgba(200, 200, 200, 0.4)",
+            customdata=hover_value,
+            hovertemplate=(
+                "<b>%{source.label}</b> ke <b>%{target.label}</b><br>"
+                "Jumlah serangan: %{customdata:,}"
+                "<extra></extra>"
+            ),
         )
     )])
     
@@ -368,10 +433,17 @@ def build_country_sankey(
 def country_detail_component(
     country_name: str,
     total_attacks: int,
+    total_kill: int,
+    total_wound: int,
     organizations: List[Tuple[str, int]],
 ) -> html.Div:
     """Create a detail card showing country information"""
-    top_organizations = organizations[:10]
+    total_organizations = len(organizations)
+    metrics = [
+        ("Total Serangan", total_attacks),
+        ("Jumlah Kematian", total_kill),
+        ("Jumlah Terluka", total_wound),
+    ]
 
     return html.Div(
         className="country-detail-card",
@@ -385,13 +457,19 @@ def country_detail_component(
                             html.H3(country_name, className="country-name"),
                         ],
                     ),
+                ],
+            ),
+            html.Div(
+                className="detail-metric-row",
+                children=[
                     html.Div(
-                        className="attack-total-card",
+                        className="detail-metric-card",
                         children=[
-                            html.Span("Total Serangan", className="attack-total-label"),
-                            html.Strong(f"{total_attacks:,}", className="attack-total-value"),
+                            html.Span(label, className="detail-metric-label"),
+                            html.Strong(f"{value:,}", className="detail-metric-value"),
                         ],
-                    ),
+                    )
+                    for label, value in metrics
                 ],
             ),
             html.Div(
@@ -404,32 +482,66 @@ def country_detail_component(
                                 className="detail-section-header",
                                 children=[
                                     html.H4(
-                                        "Organisasi Pelaku Teratas",
+                                        f"{total_organizations:,} Organisasi Teroris Terlibat",
                                         className="detail-section-title",
-                                    ),
-                                    html.Span(
-                                        f"{len(top_organizations)} organisasi",
-                                        className="detail-section-count",
                                     ),
                                 ],
                             ),
                             html.Div(
                                 className="org-list",
                                 children=[
-                                    html.Span(
-                                        f"{(org[:34] + '...') if len(org) > 37 else org} - {count}",
-                                        className="org-badge",
+                                    html.Div(
+                                        className="org-row",
                                         title=org,
+                                        children=[
+                                            html.Span(org, className="org-name"),
+                                            html.Span(f"{count:,}", className="org-count"),
+                                        ],
                                     )
-                                    for org, count in top_organizations
+                                    for org, count in organizations
                                 ] or [
-                                    html.Span(
+                                    html.Div(
                                         "Tidak ada data organisasi",
                                         className="empty-org-message",
                                     ),
                                 ],
                             ),
                         ],
+                    ),
+                ],
+            ),
+        ],
+    )
+
+
+def no_data_country_detail_component(
+    country_name: str,
+    start_year: int,
+    end_year: int,
+) -> html.Div:
+    period_label = str(start_year) if start_year == end_year else f"{start_year}-{end_year}"
+
+    return html.Div(
+        className="country-detail-card country-detail-empty-card",
+        children=[
+            html.Div(
+                className="detail-header",
+                children=[
+                    html.Div(
+                        children=[
+                            html.Div("Negara", className="detail-eyebrow"),
+                            html.H3(country_name, className="country-name"),
+                        ],
+                    ),
+                ],
+            ),
+            html.Div(
+                className="no-data-detail-panel",
+                children=[
+                    html.Div("Tidak ada data", className="no-data-detail-title"),
+                    html.P(
+                        f"Tidak ada serangan tercatat untuk periode {period_label}.",
+                        className="no-data-detail-message",
                     ),
                 ],
             ),
@@ -455,9 +567,20 @@ def build_country_detail_content(
     ]
     
     if len(country_data) == 0:
-        return html.Div("Data tidak tersedia untuk negara ini", className="no-data-message")
+        return html.Div(
+            className="graph2-content",
+            children=[
+                no_data_country_detail_component(
+                    country_name,
+                    range_start,
+                    range_end,
+                ),
+            ],
+        )
     
     total_attacks = int(country_data["n_atk"].sum())
+    total_kill = int(country_data["n_kill"].sum()) if "n_kill" in country_data.columns else 0
+    total_wound = int(country_data["n_wound"].sum()) if "n_wound" in country_data.columns else 0
     
     organizations: List[Tuple[str, int]] = []
     if "gname_concat" in country_data.columns:
@@ -473,7 +596,13 @@ def build_country_detail_content(
     return html.Div(
         className="graph2-content",
         children=[
-            country_detail_component(country_name, total_attacks, organizations),
+            country_detail_component(
+                country_name,
+                total_attacks,
+                total_kill,
+                total_wound,
+                organizations,
+            ),
         ],
     )
 
@@ -519,9 +648,39 @@ def get_top_5_attack_types_data(
     
     return long_data
 
+
+def line_chart_legend_layout(title: str, legend_below: bool) -> dict:
+    if legend_below:
+        return {
+            "orientation": "h",
+            "yanchor": "top",
+            "y": -0.34,
+            "xanchor": "left",
+            "x": 0,
+            "font": {"size": 11},
+            "title": {"text": title},
+        }
+
+    return {
+        "orientation": "v",
+        "yanchor": "top",
+        "y": 1,
+        "xanchor": "left",
+        "x": 1.02,
+        "font": {"size": 11},
+        "title": {"text": title},
+    }
+
+
+def line_chart_margin(legend_below: bool) -> dict:
+    if legend_below:
+        return {"l": 44, "r": 8, "t": 28, "b": 112}
+    return {"l": 44, "r": 170, "t": 28, "b": 54}
+
 def build_top_5_attack_type_line_graph(
     data: pd.DataFrame,
     year_ranges: list[tuple[int, int]],
+    legend_below: bool = False,
 ) -> Figure:
     min_year = int(data["year"].min())
     max_year = int(data["year"].max())
@@ -533,9 +692,9 @@ def build_top_5_attack_type_line_graph(
         y="n_atk",
         color="Attack Type",
         labels={
-            "n_atk": "Number of Attacks", 
-            "year": "Year", 
-            "Attack Type": "Attack Type"
+            "n_atk": "Jumlah Serangan", 
+            "year": "Tahun", 
+            "Attack Type": "Jenis Serangan"
         },
     )
 
@@ -592,11 +751,12 @@ def build_top_5_attack_type_line_graph(
     dynamic_dtick = 1 if window_size <= 20 else 2
 
     figure.update_layout(
-        legend_title_text="Attack Type",
+        autosize=True,
+        legend=line_chart_legend_layout("Jenis Serangan", legend_below),
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
-        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        margin=line_chart_margin(legend_below),
         xaxis={
             "range": [zoom_min, zoom_max],
             "showgrid": True,
@@ -605,10 +765,12 @@ def build_top_5_attack_type_line_graph(
             "griddash": "dot", 
             "dtick": dynamic_dtick, 
             "tickangle": -45,
+            "automargin": True,
         },
         yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)",
                "range": [0, y_axis_max],
-               "zeroline": False},
+               "zeroline": False,
+               "automargin": True},
         hovermode="x unified", 
         hoverlabel={
             "bgcolor": "rgba(26, 26, 26, 0.85)",
@@ -662,6 +824,7 @@ def get_top_5_target_types_data(
 def build_top_5_target_type_line_graph(
     data: pd.DataFrame,
     year_ranges: list[tuple[int, int]],
+    legend_below: bool = False,
 ) -> Figure:
     min_year = int(data["year"].min())
     max_year = int(data["year"].max())
@@ -673,9 +836,9 @@ def build_top_5_target_type_line_graph(
         y="n_atk",
         color="Target Type",
         labels={
-            "n_atk": "Number of Attacks", 
-            "year": "Year", 
-            "Target Type": "Target Type"
+            "n_atk": "Jumlah Serangan", 
+            "year": "Tahun", 
+            "Target Type": "Jenis Target"
         },
     )
 
@@ -732,11 +895,12 @@ def build_top_5_target_type_line_graph(
     dynamic_dtick = 1 if window_size <= 20 else 2
 
     figure.update_layout(
-        legend_title_text="Target Type",
+        autosize=True,
+        legend=line_chart_legend_layout("Jenis Target", legend_below),
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
-        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        margin=line_chart_margin(legend_below),
         xaxis={
             "range": [zoom_min, zoom_max],
             "showgrid": True,
@@ -745,10 +909,12 @@ def build_top_5_target_type_line_graph(
             "griddash": "dot", 
             "dtick": dynamic_dtick, 
             "tickangle": -45,
+            "automargin": True,
         },
         yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)",
                "range": [0, y_axis_max],
-               "zeroline": False},
+               "zeroline": False,
+               "automargin": True},
         hovermode="x unified", 
         hoverlabel={
             "bgcolor": "rgba(26, 26, 26, 0.85)",

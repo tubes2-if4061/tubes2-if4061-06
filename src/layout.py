@@ -17,6 +17,8 @@ from .ids import (
     SINGLE_MAP_CLICK_DATA_ID,
     TOP_5_ATTACK_TYPE_GRAPH_ID,
     TOP_5_TARGET_TYPE_GRAPH_ID,
+    VIEWPORT_WIDTH_INTERVAL_ID,
+    VIEWPORT_WIDTH_STORE_ID,
 )
 
 
@@ -28,10 +30,10 @@ def summary_cards(data: pd.DataFrame) -> html.Div:
     total_attacks = int(data["n_atk"].sum())
 
     cards = [
-        ("Years", f"{min_year}-{max_year}"),
-        ("Records", f"{total_records:,}"),
-        ("Countries", f"{total_countries:,}"),
-        ("Total Attacks", f"{total_attacks:,}"),
+        ("Tahun Tersedia (kecuali 1993)", f"{min_year}-{max_year}"),
+        ("Baris Data", f"{total_records:,}"),
+        ("Negara", f"{total_countries:,}"),
+        ("Total Serangan", f"{total_attacks:,}"),
     ]
 
     return html.Div(
@@ -84,16 +86,6 @@ def create_layout(data: pd.DataFrame) -> html.Div:
             html.Div(
                 className="app-layout",
                 children=[
-                    html.Aside(
-                        className="sidebar-nav",
-                        children=[
-                            html.Div("TG", className="sidebar-logo"),
-                            html.Div("MAP", className="nav-item nav-item-active"),
-                            html.Div("G2", className="nav-item"),
-                            html.Div("G3", className="nav-item"),
-                            html.Div("SET", className="nav-item"),
-                        ],
-                    ),
                     html.Div(
                         className="dashboard",
                         children=[
@@ -152,21 +144,15 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                     ),
                                     html.Section(
                                         id=GRAPH2_SECTION_ID,
-                                        className="visualization-section graph2-section",
+                                        className="graph2-section",
                                         style={"display": "none"},
                                         children=[
-                                            html.Div(
-                                                className="section-heading graph2-heading",
-                                                children=[
-                                                    html.H2("Detail Negara", className="section-title"),
-                                                    html.Button(
-                                                        "Tutup",
-                                                        id=COUNTRY_DETAIL_CLOSE_BUTTON_ID,
-                                                        className="detail-close-button",
-                                                        n_clicks=0,
-                                                        type="button",
-                                                    ),
-                                                ],
+                                            html.Button(
+                                                "Tutup",
+                                                id=COUNTRY_DETAIL_CLOSE_BUTTON_ID,
+                                                className="detail-close-button",
+                                                n_clicks=0,
+                                                type="button",
                                             ),
                                             html.Div(
                                                 id="graph2-content-container",
@@ -175,6 +161,13 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                         ],
                                     ),
                                     dcc.Store(id=SINGLE_MAP_CLICK_DATA_ID),
+                                    dcc.Store(id=VIEWPORT_WIDTH_STORE_ID),
+                                    dcc.Interval(
+                                        id=VIEWPORT_WIDTH_INTERVAL_ID,
+                                        interval=1000,
+                                        n_intervals=0,
+                                        max_intervals=1,
+                                    ),
                             html.Div(
                                 id=LINE_GRAPH_WORKSPACE_ID,
                                 className="visualization-section line-graph-workspace",
@@ -186,7 +179,11 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                             dcc.Graph(
                                                 id=TOP_5_ATTACK_TYPE_GRAPH_ID,
                                                 className="line-graph",
-                                                config={"displayModeBar": False},
+                                                config={
+                                                    "displayModeBar": False,
+                                                    "responsive": True,
+                                                },
+                                                responsive=True,
                                                 style={"height": "350px", "width": "100%"},
                                             )
                                         ],
@@ -198,7 +195,11 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                             dcc.Graph(
                                                 id=TOP_5_TARGET_TYPE_GRAPH_ID,
                                                 className="line-graph",
-                                                config={"displayModeBar": False},
+                                                config={
+                                                    "displayModeBar": False,
+                                                    "responsive": True,
+                                                },
+                                                responsive=True,
                                                 style={"height": "350px", "width": "100%"},
                                             )
                                         ],

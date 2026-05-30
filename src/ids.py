@@ -10,6 +10,13 @@ COMPARE_YEAR_SLIDER_IDS = [
     "compare-year-3-slider",
     "compare-year-4-slider",
 ]
+SINGLE_YEAR_SLIDER_VALUE_ID = "single-year-slider-value"
+COMPARE_YEAR_SLIDER_VALUE_IDS = [
+    "compare-year-1-slider-value",
+    "compare-year-2-slider-value",
+    "compare-year-3-slider-value",
+    "compare-year-4-slider-value",
+]
 COMPARE_YEAR_SLIDER_ROW_IDS = [
     "compare-year-1-slider-row",
     "compare-year-2-slider-row",
@@ -33,6 +40,8 @@ COMPARE_MAP_VIEW_TOGGLE_ID = "compare-map-view-toggle"
 LINE_GRAPH_WORKSPACE_ID = "line-graph-workspace"
 TOP_5_ATTACK_TYPE_GRAPH_ID = "top-5-attack-type-graph"
 TOP_5_TARGET_TYPE_GRAPH_ID = "top-5-target-type-graph"
+VIEWPORT_WIDTH_INTERVAL_ID = "viewport-width-interval"
+VIEWPORT_WIDTH_STORE_ID = "viewport-width-store"
 
 YEAR_RANGE_START_IDS = [
     "year-range-1-start",

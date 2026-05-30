@@ -24,6 +24,7 @@ from .ids import (
     COMPARE_COUNT_FILTER_ID,
     COMPARE_YEAR_SLIDER_IDS,
     COMPARE_YEAR_SLIDER_ROW_IDS,
+    COMPARE_YEAR_SLIDER_VALUE_IDS,
     GRAPH2_SECTION_ID,
     LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
@@ -36,8 +37,11 @@ from .ids import (
     SINGLE_YEAR_MODE_FILTER_ID,
     SINGLE_YEAR_SLIDER_ID,
     SINGLE_YEAR_SLIDER_ROW_ID,
+    SINGLE_YEAR_SLIDER_VALUE_ID,
     TOP_5_ATTACK_TYPE_GRAPH_ID,
     TOP_5_TARGET_TYPE_GRAPH_ID,
+    VIEWPORT_WIDTH_INTERVAL_ID,
+    VIEWPORT_WIDTH_STORE_ID,
     YEAR_RANGE_ERROR_ID,
     YEAR_RANGE_END_IDS,
     YEAR_RANGE_ROW_IDS,
@@ -68,6 +72,19 @@ def fallback_year(value: Optional[int], fallback: int) -> int:
         return int(value)
     except (TypeError, ValueError):
         return fallback
+
+
+def year_slider_percent(year: int, min_year: int, max_year: int) -> str:
+    year_range = max_year - min_year
+    if year_range <= 0:
+        return "0%"
+    return f"{((year - min_year) / year_range) * 100}%"
+
+
+def line_legend_should_move_below(viewport_width: Optional[int]) -> bool:
+    if viewport_width is None:
+        return False
+    return int(viewport_width) < 1100
 
 
 def validate_year_ranges(
@@ -210,6 +227,54 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
     """Registers all callbacks for the Dash app."""
     min_year = int(data["year"].min())
     max_year = int(data["year"].max())
+
+    app.clientside_callback(
+        """
+        function(_n_intervals) {
+            return window.innerWidth || document.documentElement.clientWidth || 1200;
+        }
+        """,
+        Output(VIEWPORT_WIDTH_STORE_ID, "data"),
+        Input(VIEWPORT_WIDTH_INTERVAL_ID, "n_intervals"),
+    )
+
+    @app.callback(
+        [
+            Output(SINGLE_YEAR_SLIDER_VALUE_ID, "children"),
+            Output(SINGLE_YEAR_SLIDER_VALUE_ID, "style"),
+            *[Output(value_id, "children") for value_id in COMPARE_YEAR_SLIDER_VALUE_IDS],
+            *[Output(value_id, "style") for value_id in COMPARE_YEAR_SLIDER_VALUE_IDS],
+        ],
+        [
+            Input(SINGLE_YEAR_SLIDER_ID, "value"),
+            *[Input(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+        ],
+    )
+    def update_year_slider_labels(
+        single_year: int | None,
+        compare_year_1: int | None,
+        compare_year_2: int | None,
+        compare_year_3: int | None,
+        compare_year_4: int | None,
+    ) -> List[object]:
+        years = [
+            fallback_year(single_year, min_year),
+            fallback_year(compare_year_1, min_year),
+            fallback_year(compare_year_2, min_year),
+            fallback_year(compare_year_3, min_year),
+            fallback_year(compare_year_4, min_year),
+        ]
+        styles = [
+            {"left": year_slider_percent(year, min_year, max_year)}
+            for year in years
+        ]
+
+        return [
+            str(years[0]),
+            styles[0],
+            *[str(year) for year in years[1:]],
+            *styles[1:],
+        ]
 
     @app.callback(
         [
@@ -637,6 +702,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             Input(YEAR_RANGE_END_IDS[2], "value"),
             Input(YEAR_RANGE_START_IDS[3], "value"),
             Input(YEAR_RANGE_END_IDS[3], "value"),
+            Input(VIEWPORT_WIDTH_STORE_ID, "data"),
         ],
     )
     def update_both_line_graphs(
@@ -656,6 +722,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         end_year_3: int | None,
         start_year_4: int | None,
         end_year_4: int | None,
+        viewport_width: int | None,
     ) -> tuple[Figure, Figure]:
         
         year_ranges = []
@@ -692,7 +759,16 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             if not year_ranges:
                 raise PreventUpdate
 
-        fig_attack = build_top_5_attack_type_line_graph(data, year_ranges)
-        fig_target = build_top_5_target_type_line_graph(data, year_ranges)
+        legend_below = line_legend_should_move_below(viewport_width)
+        fig_attack = build_top_5_attack_type_line_graph(
+            data,
+            year_ranges,
+            legend_below=legend_below,
+        )
+        fig_target = build_top_5_target_type_line_graph(
+            data,
+            year_ranges,
+            legend_below=legend_below,
+        )
 
         return fig_attack, fig_target
