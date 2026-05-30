@@ -556,12 +556,23 @@ def build_top_5_attack_type_line_graph(
         },
     )
 
+    figure.update_traces(
+        hovertemplate="<b>%{y:,}</b> serangan<extra></extra>"
+    )
+
     colors = ["rgba(255, 99, 132, 0.2)", "rgba(54, 162, 235, 0.2)", "rgba(255, 206, 86, 0.2)", "rgba(75, 192, 192, 0.2)"]
 
     for index, (start_year, end_year) in enumerate(year_ranges):
+        if start_year == end_year:
+            x_start = start_year - 0.4
+            x_end = end_year + 0.4
+        else:
+            x_start = start_year
+            x_end = end_year
+
         figure.add_vrect(
-            x0=start_year - 0.4, 
-            x1=end_year + 0.4, 
+            x0=x_start, 
+            x1=x_end, 
             fillcolor=colors[index % len(colors)],
             opacity=0.5, 
             layer="below", 
@@ -571,14 +582,57 @@ def build_top_5_attack_type_line_graph(
             annotation_position="top left"
         )
 
+    if year_ranges:
+        all_selected_years = [year for range_tuple in year_ranges for year in range_tuple]
+        
+        zoom_min = min(all_selected_years) - 2
+        zoom_max = max(all_selected_years) + 2
+        
+        zoom_min = max(zoom_min, min_year)
+        zoom_max = min(zoom_max, max_year)
+    else:
+        zoom_min = min_year
+        zoom_max = max_year
+
+    zoomed_data = plot_data[
+        (plot_data["year"] >= zoom_min) & 
+        (plot_data["year"] <= zoom_max)
+    ]
+
+    if not zoomed_data.empty:
+        max_y_in_view = zoomed_data["n_atk"].max()
+        y_axis_max = max_y_in_view * 1.10 
+    else:
+        y_axis_max = None
+
+    window_size = zoom_max - zoom_min
+    dynamic_dtick = 1 if window_size <= 20 else 2
+
     figure.update_layout(
         legend_title_text="Attack Type",
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         margin={"l": 40, "r": 20, "t": 40, "b": 40},
-        xaxis={"showgrid": False},
-        yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)"}
+        xaxis={
+            "range": [zoom_min, zoom_max],
+            "showgrid": True,
+            "gridcolor": "rgba(255, 255, 255, 0.05)",
+            "gridwidth": 1,
+            "griddash": "dot", 
+            "dtick": dynamic_dtick, 
+            "tickangle": -45,
+        },
+        yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)",
+               "range": [0, y_axis_max],
+               "zeroline": False},
+        hovermode="x unified", 
+        hoverlabel={
+            "bgcolor": "rgba(26, 26, 26, 0.85)",
+            "bordercolor": "rgba(255, 255, 255, 0.2)",
+            "font_size": 12,
+            "font_family": "system-ui"
+        }
     )
 
     return figure
@@ -642,12 +696,23 @@ def build_top_5_target_type_line_graph(
         },
     )
 
+    figure.update_traces(
+        hovertemplate="<b>%{y:,}</b> serangan<extra></extra>"
+    )
+
     colors = ["rgba(255, 99, 132, 0.2)", "rgba(54, 162, 235, 0.2)", "rgba(255, 206, 86, 0.2)", "rgba(75, 192, 192, 0.2)"]
 
     for index, (start_year, end_year) in enumerate(year_ranges):
+        if start_year == end_year:
+            x_start = start_year - 0.4
+            x_end = end_year + 0.4
+        else:
+            x_start = start_year
+            x_end = end_year
+
         figure.add_vrect(
-            x0=start_year - 0.4, 
-            x1=end_year + 0.4, 
+            x0=x_start, 
+            x1=x_end, 
             fillcolor=colors[index % len(colors)],
             opacity=0.5, 
             layer="below", 
@@ -657,14 +722,57 @@ def build_top_5_target_type_line_graph(
             annotation_position="top left"
         )
 
+    if year_ranges:
+        all_selected_years = [year for range_tuple in year_ranges for year in range_tuple]
+        
+        zoom_min = min(all_selected_years) - 2
+        zoom_max = max(all_selected_years) + 2
+        
+        zoom_min = max(zoom_min, min_year)
+        zoom_max = min(zoom_max, max_year)
+    else:
+        zoom_min = min_year
+        zoom_max = max_year
+
+    zoomed_data = plot_data[
+        (plot_data["year"] >= zoom_min) & 
+        (plot_data["year"] <= zoom_max)
+    ]
+    
+    if not zoomed_data.empty:
+        max_y_in_view = zoomed_data["n_atk"].max()
+        y_axis_max = max_y_in_view * 1.10 
+    else:
+        y_axis_max = None
+
+    window_size = zoom_max - zoom_min
+    dynamic_dtick = 1 if window_size <= 20 else 2
+
     figure.update_layout(
         legend_title_text="Target Type",
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         margin={"l": 40, "r": 20, "t": 40, "b": 40},
-        xaxis={"showgrid": False},
-        yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)"}
+        xaxis={
+            "range": [zoom_min, zoom_max],
+            "showgrid": True,
+            "gridcolor": "rgba(255, 255, 255, 0.05)",
+            "gridwidth": 1,
+            "griddash": "dot", 
+            "dtick": dynamic_dtick, 
+            "tickangle": -45,
+        },
+        yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)",
+               "range": [0, y_axis_max],
+               "zeroline": False},
+        hovermode="x unified", 
+        hoverlabel={
+            "bgcolor": "rgba(26, 26, 26, 0.85)",
+            "bordercolor": "rgba(255, 255, 255, 0.2)",
+            "font_size": 12,
+            "font_family": "system-ui"
+        }
     )
 
     return figure
