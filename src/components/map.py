@@ -458,3 +458,175 @@ def build_graph2_content(
             ),
         ],
     )
+
+def get_top_5_attack_types_data(
+    data: pd.DataFrame,
+    start_year: int,
+    end_year: int,
+) -> pd.DataFrame:
+    range_start = min(start_year, end_year)
+    range_end = max(start_year, end_year)
+
+    filtered_data = data[
+        (data["year"] >= range_start)
+        & (data["year"] <= range_end)
+    ]
+
+    attack_cols = [col for col in data.columns if col.startswith("attacktype_")]
+
+    yearly_data = filtered_data.groupby("year")[attack_cols].sum().reset_index()
+
+    total_counts = yearly_data[attack_cols].sum().sort_values(ascending=False)
+    top_5_cols = total_counts.head(5).index.tolist()
+
+    plot_data = yearly_data[["year"] + top_5_cols]
+
+    long_data = plot_data.melt(
+        id_vars=["year"],
+        value_vars=top_5_cols,
+        var_name="Attack Type",
+        value_name="n_atk"
+    )
+
+    long_data["Attack Type"] = (
+        long_data["Attack Type"]
+        .str.replace("attacktype_", "")
+        .str.replace("_cnt", "")
+        .str.replace("_", " ")
+        .str.title()
+    )
+    
+    return long_data
+
+def build_top_5_attack_type_line_graph(
+    data: pd.DataFrame,
+    year_ranges: list[tuple[int, int]],
+) -> Figure:
+    min_year = int(data["year"].min())
+    max_year = int(data["year"].max())
+    plot_data = get_top_5_attack_types_data(data, min_year, max_year)
+
+    figure = px.line(
+        plot_data,
+        x="year",
+        y="n_atk",
+        color="Attack Type",
+        labels={
+            "n_atk": "Number of Attacks", 
+            "year": "Year", 
+            "Attack Type": "Attack Type"
+        },
+    )
+
+    colors = ["rgba(255, 99, 132, 0.2)", "rgba(54, 162, 235, 0.2)", "rgba(255, 206, 86, 0.2)", "rgba(75, 192, 192, 0.2)"]
+
+    for index, (start_year, end_year) in enumerate(year_ranges):
+        figure.add_vrect(
+            x0=start_year - 0.4, 
+            x1=end_year + 0.4, 
+            fillcolor=colors[index % len(colors)],
+            opacity=0.5, 
+            layer="below", 
+            line_width=1, 
+            line_dash="dash",
+            annotation_text=f"RANGE {index + 1}",
+            annotation_position="top left"
+        )
+
+    figure.update_layout(
+        legend_title_text="Attack Type",
+        font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        xaxis={"showgrid": False},
+        yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)"}
+    )
+
+    return figure
+
+def get_top_5_target_types_data(
+    data: pd.DataFrame,
+    start_year: int,
+    end_year: int,
+) -> pd.DataFrame:
+    range_start = min(start_year, end_year)
+    range_end = max(start_year, end_year)
+
+    filtered_data = data[
+        (data["year"] >= range_start)
+        & (data["year"] <= range_end)
+    ]
+
+    target_cols = [col for col in data.columns if col.startswith("targettype_")]
+
+    yearly_data = filtered_data.groupby("year")[target_cols].sum().reset_index()
+
+    total_counts = yearly_data[target_cols].sum().sort_values(ascending=False)
+    top_5_cols = total_counts.head(5).index.tolist()
+
+    plot_data = yearly_data[["year"] + top_5_cols]
+
+    long_data = plot_data.melt(
+        id_vars=["year"],
+        value_vars=top_5_cols,
+        var_name="Target Type",
+        value_name="n_atk"
+    )
+
+    long_data["Target Type"] = (
+        long_data["Target Type"]
+        .str.replace("targettype_", "")
+        .str.replace("_cnt", "")
+        .str.replace("_", " ")
+        .str.title()
+    )
+    
+    return long_data
+
+def build_top_5_target_type_line_graph(
+    data: pd.DataFrame,
+    year_ranges: list[tuple[int, int]],
+) -> Figure:
+    min_year = int(data["year"].min())
+    max_year = int(data["year"].max())
+    plot_data = get_top_5_target_types_data(data, min_year, max_year)
+
+    figure = px.line(
+        plot_data,
+        x="year",
+        y="n_atk",
+        color="Target Type",
+        labels={
+            "n_atk": "Number of Attacks", 
+            "year": "Year", 
+            "Target Type": "Target Type"
+        },
+    )
+
+    colors = ["rgba(255, 99, 132, 0.2)", "rgba(54, 162, 235, 0.2)", "rgba(255, 206, 86, 0.2)", "rgba(75, 192, 192, 0.2)"]
+
+    for index, (start_year, end_year) in enumerate(year_ranges):
+        figure.add_vrect(
+            x0=start_year - 0.4, 
+            x1=end_year + 0.4, 
+            fillcolor=colors[index % len(colors)],
+            opacity=0.5, 
+            layer="below", 
+            line_width=1, 
+            line_dash="dash",
+            annotation_text=f"RANGE {index + 1}",
+            annotation_position="top left"
+        )
+
+    figure.update_layout(
+        legend_title_text="Target Type",
+        font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        margin={"l": 40, "r": 20, "t": 40, "b": 40},
+        xaxis={"showgrid": False},
+        yaxis={"gridcolor": "rgba(255, 255, 255, 0.1)"}
+    )
+
+    return figure

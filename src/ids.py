@@ -24,12 +24,14 @@ SINGLE_MODE_LAYOUT_ID = "single-mode-layout"
 COMPARE_MODE_LAYOUT_ID = "compare-mode-layout"
 MODE_LAYOUT_ID = "mode-layout"
 GRAPH2_SECTION_ID = "graph2-section"
-GRAPH3_SECTION_ID = "graph3-section"
 PERIOD_CONTROLS_GRID_ID = "period-controls-grid"
 SINGLE_MAPS_CONTAINER_ID = "single-maps-container"
 COMPARE_MAPS_CONTAINER_ID = "compare-maps-container"
 SINGLE_MAP_VIEW_TOGGLE_ID = "single-map-view-toggle"
 COMPARE_MAP_VIEW_TOGGLE_ID = "compare-map-view-toggle"
+LINE_GRAPH_WORKSPACE_ID = "line-graph-workspace"
+TOP_5_ATTACK_TYPE_GRAPH_ID = "top-5-attack-type-graph"
+TOP_5_TARGET_TYPE_GRAPH_ID = "top-5-target-type-graph"
 
 YEAR_RANGE_START_IDS = [
     "year-range-1-start",
