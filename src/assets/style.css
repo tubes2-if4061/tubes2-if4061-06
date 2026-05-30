@@ -13,24 +13,41 @@
 
 
 .org-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
-.org-badge {
-    display: inline-block;
-    padding: 6px 10px;
-    background: rgba(139, 0, 0, 0.14);
+.org-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: rgba(139, 0, 0, 0.12);
     color: #fff;
-    border-radius: 12px;
     font-size: 13px;
-    line-height: 1;
-    white-space: nowrap;
-    max-width: 100%;
+    line-height: 1.2;
+}
+
+.org-name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.org-count {
+    color: #ffffff;
+    font-weight: 800;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 * {
@@ -161,6 +178,7 @@ body {
 
 .single-mode-layout.has-country-detail {
     grid-template-columns: minmax(0, 1.6fr) minmax(340px, 0.95fr);
+    grid-template-rows: minmax(0, auto) auto;
     grid-template-areas:
         "map detail"
         "sankey sankey";
@@ -194,6 +212,7 @@ body {
     grid-area: map;
     grid-template-rows: auto auto auto;
     align-content: start;
+    min-height: 0;
 }
 
 .sankey-section {
@@ -203,6 +222,7 @@ body {
 
 .graph2-section {
     grid-area: detail;
+    min-height: 0;
 }
 
 .line-graph-workspace {
@@ -236,16 +256,16 @@ body {
     min-width: 0;
 }
 
-.single-map-section .map-view-toggle {
+.single-map-section .map-view-control {
     position: static;
     top: auto;
     left: auto;
     transform: none;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    align-items: start;
     justify-content: flex-end;
     align-self: center;
-    gap: 6px;
+    gap: 4px;
     margin-left: auto;
 }
 
@@ -266,7 +286,6 @@ body {
 
 .filter-section,
 .globe-section,
-.graph2-section,
 .graph3-section {
     display: grid;
     gap: 12px;
@@ -411,13 +430,29 @@ body {
     width: 100%;
 }
 
-.map-view-toggle {
+.map-view-control {
     position: absolute;
     left: 10px;
     top: 54%;
     transform: translateY(-50%);
     z-index: 9;
     display: grid;
+    align-items: start;
+    gap: 4px;
+    pointer-events: auto;
+}
+
+.map-view-control-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.55px;
+    text-transform: uppercase;
+}
+
+.map-view-toggle {
+    display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     pointer-events: auto;
 }
@@ -450,12 +485,22 @@ body {
 }
 
 .graph2-section {
-    align-content: start;
+    display: grid;
+    gap: 0;
+    align-content: stretch;
     overflow: hidden;
+    position: relative;
 }
 
 .single-mode-layout .graph2-section {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+}
+
+.single-mode-layout.has-country-detail .graph2-section {
+    contain: size;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .graph2-heading {
@@ -464,6 +509,10 @@ body {
 }
 
 .detail-close-button {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
     min-height: 32px;
     padding: 0 12px;
     border: 1px solid rgba(255, 255, 255, 0.16);
@@ -486,22 +535,29 @@ body {
 .graph2-content,
 .detail-and-sankey {
     min-width: 0;
+    min-height: 0;
 }
 
 .single-mode-layout.has-country-detail .graph2-content-container {
     display: grid;
-    align-items: start;
+    align-items: stretch;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .single-mode-layout.has-country-detail .graph2-content {
-    align-self: start;
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .single-mode-layout.has-country-detail .country-detail-card {
     width: 100%;
-    height: auto;
+    height: 100%;
     min-height: 0;
-    align-self: start;
+    align-self: stretch;
 }
 .compare-map-section > .section-heading {
     display: flex;
@@ -514,16 +570,16 @@ body {
     align-items: center;
     min-width: 0;
 }
-.compare-map-section .map-view-toggle {
+.compare-map-section .map-view-control {
     position: static;
     top: auto;
     left: auto;
     transform: none;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    align-items: start;
     justify-content: flex-end;
     align-self: center;
-    gap: 6px;
+    gap: 4px;
     margin-left: auto;
 }
 .compare-map-section .map-view-option {
@@ -538,8 +594,10 @@ body {
 
 .country-detail-card {
     display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
     gap: 14px;
     padding: 14px;
+    overflow: hidden;
     border: 1px solid rgba(188, 205, 243, 0.12);
     border-radius: 18px;
     background:
@@ -549,13 +607,15 @@ body {
 
 .detail-header {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding-right: 72px;
     align-items: start;
+    padding-top: 4px;
 }
 
 .detail-eyebrow,
-.attack-total-label,
+.detail-metric-label,
 .detail-section-count {
     color: rgba(224, 224, 224, 0.66);
     font-size: 11px;
@@ -571,17 +631,24 @@ body {
     line-height: 1.05;
 }
 
-.attack-total-card {
+.detail-metric-row {
     display: grid;
-    gap: 4px;
-    min-width: 112px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.075);
-    text-align: right;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
-.attack-total-value {
+.detail-metric-card {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.075);
+}
+
+.detail-metric-value {
     color: #ffffff;
     font-size: 22px;
     line-height: 1;
@@ -590,14 +657,32 @@ body {
 .detail-body,
 .detail-section {
     display: grid;
+    min-height: 0;
     gap: 10px;
+}
+
+.detail-body {
+    grid-template-rows: minmax(0, 1fr);
+}
+
+.detail-section {
+    grid-template-rows: auto minmax(0, 1fr);
 }
 
 .single-mode-layout.has-country-detail .detail-body,
 .single-mode-layout.has-country-detail .detail-section,
 .single-mode-layout.has-country-detail .org-list {
     align-content: start;
-    justify-content: start;
+    min-height: 0;
+}
+
+.single-mode-layout.has-country-detail .detail-body,
+.single-mode-layout.has-country-detail .detail-section {
+    overflow: hidden;
+}
+
+.single-mode-layout.has-country-detail .org-list {
+    overflow-y: auto;
 }
 
 .detail-section-header {
@@ -850,7 +935,7 @@ body {
     display: flex;
     align-items: end;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 30px !important;
 }
 
 .globe-section .mode-filter-wrap {
@@ -1697,11 +1782,10 @@ body {
             "error";
     }
 
-    .map-view-toggle {
+    .map-view-control {
         top: 12px;
         left: 10px;
         transform: none;
-        grid-auto-flow: column;
     }
 
     .dashboard-grid,
@@ -1742,6 +1826,7 @@ body {
     .year-ranges,
     .year-range-row,
     .year-slider-row,
+    .detail-metric-row,
     .maps-grid-2,
     .maps-grid-3,
     .maps-grid-4 {

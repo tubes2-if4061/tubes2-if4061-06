@@ -28,10 +28,10 @@ def summary_cards(data: pd.DataFrame) -> html.Div:
     total_attacks = int(data["n_atk"].sum())
 
     cards = [
-        ("Years", f"{min_year}-{max_year}"),
-        ("Records", f"{total_records:,}"),
-        ("Countries", f"{total_countries:,}"),
-        ("Total Attacks", f"{total_attacks:,}"),
+        ("Tahun Tersedia", f"{min_year}-{max_year}"),
+        ("Baris Data", f"{total_records:,}"),
+        ("Negara", f"{total_countries:,}"),
+        ("Total Serangan", f"{total_attacks:,}"),
     ]
 
     return html.Div(
@@ -142,21 +142,15 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                     ),
                                     html.Section(
                                         id=GRAPH2_SECTION_ID,
-                                        className="visualization-section graph2-section",
+                                        className="graph2-section",
                                         style={"display": "none"},
                                         children=[
-                                            html.Div(
-                                                className="section-heading graph2-heading",
-                                                children=[
-                                                    html.H2("Detail Negara", className="section-title"),
-                                                    html.Button(
-                                                        "Tutup",
-                                                        id=COUNTRY_DETAIL_CLOSE_BUTTON_ID,
-                                                        className="detail-close-button",
-                                                        n_clicks=0,
-                                                        type="button",
-                                                    ),
-                                                ],
+                                            html.Button(
+                                                "Tutup",
+                                                id=COUNTRY_DETAIL_CLOSE_BUTTON_ID,
+                                                className="detail-close-button",
+                                                n_clicks=0,
+                                                type="button",
                                             ),
                                             html.Div(
                                                 id="graph2-content-container",

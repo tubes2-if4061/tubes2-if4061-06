@@ -68,11 +68,11 @@ def year_range_row(
         className="year-range-row",
         style={"display": "grid"} if is_visible else {"display": "none"},
         children=[
-            html.Div(f"Range {row_index + 1}", className="range-label"),
+            html.Div(f"Rentang {row_index + 1}", className="range-label"),
             html.Label(
                 className="field-label",
                 children=[
-                    "Start",
+                    "Awal",
                     year_dropdown(
                         YEAR_RANGE_START_IDS[row_index],
                         years,
@@ -83,7 +83,7 @@ def year_range_row(
             html.Label(
                 className="field-label",
                 children=[
-                    "End",
+                    "Akhir",
                     year_dropdown(
                         YEAR_RANGE_END_IDS[row_index],
                         years,
@@ -110,7 +110,7 @@ def single_year_slider_row(years: List[int], default_year: int) -> html.Div:
         className="year-slider-row single-year-slider-row",
         style={"display": "none"},
         children=[
-            html.Div("Year", className="range-label"),
+            html.Div("Tahun", className="range-label"),
             html.Div(
                 className="year-slider-wrap",
                 children=[
@@ -193,7 +193,7 @@ def filter_component(df: pd.DataFrame) -> html.Div:
                         className="compare-count-control",
                         style={"display": "grid"},
                         children=[
-                            html.Label("Maps", className="filter-label"),
+                            html.Label("JUMLAH PETA", className="filter-label"),
                             dcc.RadioItems(
                                 id=COMPARE_COUNT_FILTER_ID,
                                 options=[
@@ -212,12 +212,12 @@ def filter_component(df: pd.DataFrame) -> html.Div:
                         id=SINGLE_YEAR_MODE_CONTROL_ID,
                         className="single-year-mode-control",
                         children=[
-                            html.Label("Year", className="filter-label"),
+                            html.Label("PEMILIHAN TAHUN", className="filter-label"),
                             dcc.RadioItems(
                                 id=SINGLE_YEAR_MODE_FILTER_ID,
                                 options=[
-                                    {"label": "Range", "value": "range"},
-                                    {"label": "Single Year", "value": "slider"},
+                                    {"label": "Rentang", "value": "range"},
+                                    {"label": "Slider", "value": "slider"},
                                 ],
                                 value="range",
                                 className="single-year-mode-filter",

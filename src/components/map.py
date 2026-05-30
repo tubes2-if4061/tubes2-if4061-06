@@ -15,26 +15,32 @@ from ..ids import (
 
 
 ATTACK_CATEGORY_COLORS = {
-    ">= 1000": "#cb181d",
+    "≥1000": "#cb181d",
     "100-999": "#fb6a4a",
     "10-99": "#fcae91",
-    "< 10": "#ffe5dc",
+    "<10": "#ffe5dc",
 }
 ATTACK_CATEGORY_ORDER = list(ATTACK_CATEGORY_COLORS.keys())
 UNREGISTERED_COUNTRY_COLOR = "#e7e8e8"
 
 
-def map_view_toggle(toggle_id: str, default_view: str) -> dcc.RadioItems:
-    return dcc.RadioItems(
-        id=toggle_id,
-        options=[
-            {"label": "Globe", "value": "globe"},
-            {"label": "Choropleth", "value": "choropleth"},
+def map_view_toggle(toggle_id: str, default_view: str) -> html.Div:
+    return html.Div(
+        className="map-view-control",
+        children=[
+            html.Span("Tampilan", className="map-view-control-label"),
+            dcc.RadioItems(
+                id=toggle_id,
+                options=[
+                    {"label": "Globe", "value": "globe"},
+                    {"label": "Peta", "value": "choropleth"},
+                ],
+                value=default_view,
+                className="map-view-toggle",
+                inputClassName="map-view-input",
+                labelClassName="map-view-option",
+            ),
         ],
-        value=default_view,
-        className="map-view-toggle",
-        inputClassName="map-view-input",
-        labelClassName="map-view-option",
     )
 
 
@@ -112,14 +118,14 @@ def compare_map_component() -> html.Div:
 
 def attack_legend() -> html.Div:
     legend_items = [
-        ("Not registered", UNREGISTERED_COUNTRY_COLOR),
+        ("Tidak ada data", UNREGISTERED_COUNTRY_COLOR),
         *reversed(list(ATTACK_CATEGORY_COLORS.items())),
     ]
 
     return html.Div(
         className="map-legend",
         children=[
-            html.Div("Attacks", className="map-legend-title"),
+            html.Div("Kategori Jumlah Serangan", className="map-legend-title"),
             *[
                 html.Div(
                     className="map-legend-item",
@@ -139,12 +145,12 @@ def attack_legend() -> html.Div:
 
 def attack_category(n_atk: int) -> str:
     if n_atk >= 1000:
-        return ">= 1000"
+        return "≥1000"
     if n_atk >= 100:
         return "100-999"
     if n_atk >= 10:
         return "10-99"
-    return "< 10"
+    return "<10"
 
 
 def aggregate_attacks_by_country(
@@ -346,6 +352,7 @@ def build_country_sankey(
     source = [k[0] for k in sankey_dict.keys()]
     target = [k[1] for k in sankey_dict.keys()]
     value = list(sankey_dict.values())
+    hover_value = [int(round(link_value)) for link_value in value]
     
     node_colors = []
     for node in nodes:
@@ -363,12 +370,24 @@ def build_country_sankey(
             line=dict(color="black", width=0.5),
             label=nodes,
             color=node_colors,
+            hovertemplate=(
+                "<b>%{label}</b><br>"
+                "Total arus masuk: %{value:,}<br>"
+                "Total arus keluar: %{value:,}"
+                "<extra></extra>"
+            ),
         ),
         link=dict(
             source=source,
             target=target,
             value=value,
             color="rgba(200, 200, 200, 0.4)",
+            customdata=hover_value,
+            hovertemplate=(
+                "<b>%{source.label}</b> ke <b>%{target.label}</b><br>"
+                "Jumlah serangan: %{customdata:,}"
+                "<extra></extra>"
+            ),
         )
     )])
     
@@ -387,10 +406,17 @@ def build_country_sankey(
 def country_detail_component(
     country_name: str,
     total_attacks: int,
+    total_kill: int,
+    total_wound: int,
     organizations: List[Tuple[str, int]],
 ) -> html.Div:
     """Create a detail card showing country information"""
-    top_organizations = organizations[:10]
+    total_organizations = len(organizations)
+    metrics = [
+        ("Total Serangan", total_attacks),
+        ("Jumlah Kematian", total_kill),
+        ("Jumlah Terluka", total_wound),
+    ]
 
     return html.Div(
         className="country-detail-card",
@@ -404,13 +430,19 @@ def country_detail_component(
                             html.H3(country_name, className="country-name"),
                         ],
                     ),
+                ],
+            ),
+            html.Div(
+                className="detail-metric-row",
+                children=[
                     html.Div(
-                        className="attack-total-card",
+                        className="detail-metric-card",
                         children=[
-                            html.Span("Total Serangan", className="attack-total-label"),
-                            html.Strong(f"{total_attacks:,}", className="attack-total-value"),
+                            html.Span(label, className="detail-metric-label"),
+                            html.Strong(f"{value:,}", className="detail-metric-value"),
                         ],
-                    ),
+                    )
+                    for label, value in metrics
                 ],
             ),
             html.Div(
@@ -423,26 +455,25 @@ def country_detail_component(
                                 className="detail-section-header",
                                 children=[
                                     html.H4(
-                                        "Organisasi Pelaku Teratas",
+                                        f"{total_organizations:,} Organisasi Teroris Terlibat",
                                         className="detail-section-title",
-                                    ),
-                                    html.Span(
-                                        f"{len(top_organizations)} organisasi",
-                                        className="detail-section-count",
                                     ),
                                 ],
                             ),
                             html.Div(
                                 className="org-list",
                                 children=[
-                                    html.Span(
-                                        f"{(org[:34] + '...') if len(org) > 37 else org} - {count}",
-                                        className="org-badge",
+                                    html.Div(
+                                        className="org-row",
                                         title=org,
+                                        children=[
+                                            html.Span(org, className="org-name"),
+                                            html.Span(f"{count:,}", className="org-count"),
+                                        ],
                                     )
-                                    for org, count in top_organizations
+                                    for org, count in organizations
                                 ] or [
-                                    html.Span(
+                                    html.Div(
                                         "Tidak ada data organisasi",
                                         className="empty-org-message",
                                     ),
@@ -477,6 +508,8 @@ def build_country_detail_content(
         return html.Div("Data tidak tersedia untuk negara ini", className="no-data-message")
     
     total_attacks = int(country_data["n_atk"].sum())
+    total_kill = int(country_data["n_kill"].sum()) if "n_kill" in country_data.columns else 0
+    total_wound = int(country_data["n_wound"].sum()) if "n_wound" in country_data.columns else 0
     
     organizations: List[Tuple[str, int]] = []
     if "gname_concat" in country_data.columns:
@@ -492,7 +525,13 @@ def build_country_detail_content(
     return html.Div(
         className="graph2-content",
         children=[
-            country_detail_component(country_name, total_attacks, organizations),
+            country_detail_component(
+                country_name,
+                total_attacks,
+                total_kill,
+                total_wound,
+                organizations,
+            ),
         ],
     )
 
@@ -552,9 +591,9 @@ def build_top_5_attack_type_line_graph(
         y="n_atk",
         color="Attack Type",
         labels={
-            "n_atk": "Number of Attacks", 
-            "year": "Year", 
-            "Attack Type": "Attack Type"
+            "n_atk": "Jumlah Serangan", 
+            "year": "Tahun", 
+            "Attack Type": "Jenis Serangan"
         },
     )
 
@@ -611,7 +650,7 @@ def build_top_5_attack_type_line_graph(
     dynamic_dtick = 1 if window_size <= 20 else 2
 
     figure.update_layout(
-        legend_title_text="Attack Type",
+        legend_title_text="Jenis Serangan",
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
@@ -692,9 +731,9 @@ def build_top_5_target_type_line_graph(
         y="n_atk",
         color="Target Type",
         labels={
-            "n_atk": "Number of Attacks", 
-            "year": "Year", 
-            "Target Type": "Target Type"
+            "n_atk": "Jumlah Serangan", 
+            "year": "Tahun", 
+            "Target Type": "Jenis Target"
         },
     )
 
@@ -751,7 +790,7 @@ def build_top_5_target_type_line_graph(
     dynamic_dtick = 1 if window_size <= 20 else 2
 
     figure.update_layout(
-        legend_title_text="Target Type",
+        legend_title_text="Jenis Target",
         font={"family": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "color": "#e0e0e0"},
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
