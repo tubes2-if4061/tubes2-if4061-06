@@ -184,6 +184,7 @@ def build_choropleth_map(
         color_discrete_map=ATTACK_CATEGORY_COLORS,
         category_orders={"attack_category": ATTACK_CATEGORY_ORDER},
         hover_name="country_txt",
+        custom_data=["n_atk"],
         hover_data={
             "country_iso_3": False,
             "attack_category": False,
@@ -216,6 +217,9 @@ def build_choropleth_map(
 
     figure.update_geos(
         **geos_config,
+    )
+    figure.update_traces(
+        hovertemplate="<b>%{hovertext}</b><br>Total Serangan: %{customdata[0]:,}<extra></extra>",
     )
     figure.update_layout(
         autosize=True,
