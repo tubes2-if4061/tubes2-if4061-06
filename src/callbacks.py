@@ -640,11 +640,11 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
 
         # Determine year range
         if single_year_mode == "slider":
-            start_year = single_year
-            end_year = single_year
+            start_year = fallback_year(single_year, min_year)
+            end_year = start_year
         else:
-            start_year = range_start or min_year
-            end_year = range_end or max_year
+            start_year = fallback_year(range_start, min_year)
+            end_year = fallback_year(range_end, max_year)
         
         try:
             content = build_country_detail_content(data, country_name, start_year, end_year)

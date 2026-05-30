@@ -556,6 +556,8 @@ def build_country_detail_content(
     end_year: int,
 ) -> html.Div:
     """Build the country detail sidebar content."""
+    start_year = int(start_year)
+    end_year = int(end_year)
     range_start = min(start_year, end_year)
     range_end = max(start_year, end_year)
     
