@@ -1045,6 +1045,8 @@ body {
     box-shadow: none;
     font: inherit;
     outline: none;
+    appearance: textfield;
+    -moz-appearance: textfield;
 }
 
 .year-input:hover,
@@ -1062,7 +1064,9 @@ body {
 
 .year-input::-webkit-outer-spin-button,
 .year-input::-webkit-inner-spin-button {
-    opacity: 0.55;
+    margin: 0;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .compare-count-filter {

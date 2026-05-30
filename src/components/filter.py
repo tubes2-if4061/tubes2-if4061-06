@@ -49,8 +49,9 @@ COMPARE_YEAR_DEFAULTS = {
 def year_dropdown(dropdown_id: str, years: List[int], value: int) -> dcc.Input:
     return dcc.Input(
         id=dropdown_id,
-        type="number",
-        step=1,
+        type="text",
+        inputMode="numeric",
+        pattern="[0-9]*",
         value=value,
         className="year-input",
     )

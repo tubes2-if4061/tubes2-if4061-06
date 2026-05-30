@@ -62,9 +62,12 @@ def visible_range_count(mode: str, compare_count: Optional[int]) -> int:
 
 
 def fallback_year(value: Optional[int], fallback: int) -> int:
-    if value is None:
+    if value is None or value == "":
         return fallback
-    return int(value)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
 
 
 def validate_year_ranges(
@@ -80,22 +83,42 @@ def validate_year_ranges(
 
     for index, (start_year, end_year) in enumerate(year_ranges[:visible_count], start=1):
         zero_based_index = index - 1
-        if start_year is not None:
-            normalized_start_year = float(start_year)
-            if normalized_start_year < min_year or normalized_start_year > max_year:
+        if start_year not in (None, ""):
+            try:
+                normalized_start_year = float(start_year)
+            except (TypeError, ValueError):
+                invalid_start_indices.add(zero_based_index)
+                bounds_invalid_labels.append(f"Range {index} start")
+                normalized_start_year = None
+            if normalized_start_year is None:
+                pass
+            elif normalized_start_year < min_year or normalized_start_year > max_year:
                 invalid_start_indices.add(zero_based_index)
                 bounds_invalid_labels.append(f"Range {index} start")
 
-        if end_year is not None:
-            normalized_end_year = float(end_year)
-            if normalized_end_year < min_year or normalized_end_year > max_year:
+        if end_year not in (None, ""):
+            try:
+                normalized_end_year = float(end_year)
+            except (TypeError, ValueError):
+                invalid_end_indices.add(zero_based_index)
+                bounds_invalid_labels.append(f"Range {index} end")
+                normalized_end_year = None
+            if normalized_end_year is None:
+                pass
+            elif normalized_end_year < min_year or normalized_end_year > max_year:
                 invalid_end_indices.add(zero_based_index)
                 bounds_invalid_labels.append(f"Range {index} end")
 
-        if start_year is None or end_year is None:
+        if start_year in (None, "") or end_year in (None, ""):
             continue
 
-        if float(end_year) < float(start_year):
+        try:
+            normalized_start_year = float(start_year)
+            normalized_end_year = float(end_year)
+        except (TypeError, ValueError):
+            continue
+
+        if normalized_end_year < normalized_start_year:
             order_invalid_labels.append(f"Range {index}")
             invalid_start_indices.add(zero_based_index)
             invalid_end_indices.add(zero_based_index)
