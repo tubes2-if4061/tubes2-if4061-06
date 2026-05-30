@@ -6,7 +6,12 @@ from .layout import create_layout
 from .utils.data_loader import load_terrorism_data
 
 def create_app() -> Dash:
-    app = Dash(__name__, suppress_callback_exceptions=True)
+    app = Dash(
+        __name__,
+        suppress_callback_exceptions=True,
+        title="Global Terrorism Dashboard",
+        update_title=None,
+    )
     data = load_terrorism_data()
 
     app.index_string = REMOVE_BODY_MARGIN
@@ -22,5 +27,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8050,
         debug=True,
-        dev_tools_ui=False
+        dev_tools_ui=True
     )

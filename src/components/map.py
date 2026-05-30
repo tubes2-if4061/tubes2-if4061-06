@@ -10,7 +10,6 @@ from ..ids import (
     COMPARE_MAP_VIEW_TOGGLE_ID,
     SINGLE_MAPS_CONTAINER_ID,
     SINGLE_MAP_VIEW_TOGGLE_ID,
-    SINGLE_MAP_GRAPH_ID,
 )
 
 
@@ -85,7 +84,6 @@ def single_map_component() -> html.Div:
                 "globe",
                 show_toggle=False,
             ),
-            dcc.Graph(id=SINGLE_MAP_GRAPH_ID, style={"display": "none"}),
         ],
     )
 
