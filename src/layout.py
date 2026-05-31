@@ -91,7 +91,7 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                 className="corner-logo",
                 alt="ITB",
             ),
-            html.Div("Kelompok 6", className="corner-group-label"),
+            html.Div("Kelompok 6 - IF4061 2026", className="corner-group-label"),
             html.Div(
                 "Source: Global Terrorism Database",
                 className="source-label",
