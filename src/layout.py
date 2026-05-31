@@ -13,6 +13,8 @@ from .ids import (
     GRAPH2_SECTION_ID,
     LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
+    MODE_RESTORE_STORE_ID,
+    MODE_STATE_STORE_ID,
     SINGLE_MODE_LAYOUT_ID,
     SINGLE_MAP_CLICK_DATA_ID,
     TOP_5_ATTACK_TYPE_GRAPH_ID,
@@ -162,6 +164,8 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                     ),
                                     dcc.Store(id=SINGLE_MAP_CLICK_DATA_ID),
                                     dcc.Store(id=VIEWPORT_WIDTH_STORE_ID),
+                                    dcc.Store(id=MODE_STATE_STORE_ID, storage_type="memory"),
+                                    dcc.Store(id=MODE_RESTORE_STORE_ID, storage_type="memory"),
                                     dcc.Interval(
                                         id=VIEWPORT_WIDTH_INTERVAL_ID,
                                         interval=1000,

@@ -1,9 +1,9 @@
 from flask import app
 
-from dash import Dash, Input, Output, dcc, html, no_update, ctx
+from dash import Dash, Input, Output, State, dcc, html, no_update, ctx
 from dash.exceptions import PreventUpdate
 import pandas as pd
-from typing import Optional, List, Tuple
+from typing import Any, Optional, List, Tuple
 from plotly.graph_objs import Figure
 
 from .components.filter import COMPARE_YEAR_DEFAULTS, COMPARE_YEAR_RANGE_DEFAULTS
@@ -29,6 +29,8 @@ from .ids import (
     LINE_GRAPH_WORKSPACE_ID,
     MODE_LAYOUT_ID,
     MODE_FILTER_ID,
+    MODE_RESTORE_STORE_ID,
+    MODE_STATE_STORE_ID,
     PERIOD_CONTROLS_GRID_ID,
     SINGLE_MAPS_CONTAINER_ID,
     SINGLE_MAP_VIEW_TOGGLE_ID,
@@ -63,6 +65,142 @@ def visible_range_count(mode: str, compare_count: Optional[int]) -> int:
     if normalized_compare_count not in {2, 3, 4}:
         return 4
     return normalized_compare_count
+
+
+def mode_state_key(selected_mode: str, compare_count: Optional[int]) -> str:
+    if selected_mode == "compare":
+        return f"compare-{visible_range_count(selected_mode, compare_count)}"
+    return "single"
+
+
+def default_mode_snapshot(compare_count: int, min_year: int) -> dict[str, Any]:
+    year_ranges = COMPARE_YEAR_RANGE_DEFAULTS.get(
+        compare_count,
+        COMPARE_YEAR_RANGE_DEFAULTS[4],
+    )
+    compare_years = COMPARE_YEAR_DEFAULTS.get(
+        compare_count,
+        COMPARE_YEAR_DEFAULTS[4],
+    )
+
+    return {
+        "single_year_mode": "range",
+        "single_year": min_year,
+        "compare_years": list(compare_years),
+        "range_starts": [start_year for start_year, _end_year in year_ranges],
+        "range_ends": [end_year for _start_year, end_year in year_ranges],
+        "single_map_view": "globe",
+        "compare_map_view": "choropleth",
+    }
+
+
+def default_mode_state_data(min_year: int) -> dict[str, Any]:
+    return {
+        "active_key": "compare-4",
+        "states": {
+            "single": default_mode_snapshot(4, min_year),
+            "compare-2": default_mode_snapshot(2, min_year),
+            "compare-3": default_mode_snapshot(3, min_year),
+            "compare-4": default_mode_snapshot(4, min_year),
+        },
+    }
+
+
+def normalize_snapshot_list(
+    values: Any,
+    default_values: List[Any],
+) -> List[Any]:
+    if not isinstance(values, list):
+        return list(default_values)
+
+    return [
+        values[index] if index < len(values) else default_values[index]
+        for index in range(len(default_values))
+    ]
+
+
+def normalize_mode_snapshot(
+    snapshot: Any,
+    default_snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    source = snapshot if isinstance(snapshot, dict) else {}
+    single_year_mode = source.get("single_year_mode")
+    single_map_view = source.get("single_map_view")
+    compare_map_view = source.get("compare_map_view")
+
+    return {
+        "single_year_mode": (
+            single_year_mode
+            if single_year_mode in {"range", "slider"}
+            else default_snapshot["single_year_mode"]
+        ),
+        "single_year": (
+            source["single_year"]
+            if "single_year" in source
+            else default_snapshot["single_year"]
+        ),
+        "compare_years": normalize_snapshot_list(
+            source.get("compare_years"),
+            default_snapshot["compare_years"],
+        ),
+        "range_starts": normalize_snapshot_list(
+            source.get("range_starts"),
+            default_snapshot["range_starts"],
+        ),
+        "range_ends": normalize_snapshot_list(
+            source.get("range_ends"),
+            default_snapshot["range_ends"],
+        ),
+        "single_map_view": (
+            single_map_view
+            if single_map_view in {"globe", "choropleth"}
+            else default_snapshot["single_map_view"]
+        ),
+        "compare_map_view": (
+            compare_map_view
+            if compare_map_view in {"globe", "choropleth"}
+            else default_snapshot["compare_map_view"]
+        ),
+    }
+
+
+def normalize_mode_state_data(raw_data: Any, min_year: int) -> dict[str, Any]:
+    default_data = default_mode_state_data(min_year)
+    raw_states = {}
+    if isinstance(raw_data, dict) and isinstance(raw_data.get("states"), dict):
+        raw_states = raw_data["states"]
+
+    states = {
+        key: normalize_mode_snapshot(raw_states.get(key), default_snapshot)
+        for key, default_snapshot in default_data["states"].items()
+    }
+    active_key = (
+        raw_data.get("active_key")
+        if isinstance(raw_data, dict) and raw_data.get("active_key") in states
+        else default_data["active_key"]
+    )
+
+    return {"active_key": active_key, "states": states}
+
+
+def capture_mode_snapshot(
+    single_year_mode: str,
+    single_year: Any,
+    compare_years: List[Any],
+    range_starts: List[Any],
+    range_ends: List[Any],
+    single_map_view: str,
+    compare_map_view: str,
+) -> dict[str, Any]:
+    return {
+        "single_year_mode": single_year_mode,
+        "single_year": single_year,
+        "compare_years": list(compare_years),
+        "range_starts": list(range_starts),
+        "range_ends": list(range_ends),
+        "single_map_view": single_map_view,
+        "compare_map_view": compare_map_view,
+    }
 
 
 def fallback_year(value: Optional[int], fallback: int) -> int:
@@ -317,38 +455,117 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
 
     @app.callback(
         [
-            *[Output(input_id, "value") for input_id in YEAR_RANGE_START_IDS],
-            *[Output(input_id, "value") for input_id in YEAR_RANGE_END_IDS],
-            *[Output(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+            Output(MODE_STATE_STORE_ID, "data"),
+            Output(MODE_RESTORE_STORE_ID, "data"),
         ],
         [
             Input(MODE_FILTER_ID, "value"),
             Input(COMPARE_COUNT_FILTER_ID, "value"),
+            Input(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Input(SINGLE_YEAR_SLIDER_ID, "value"),
+            *[Input(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+            *[Input(input_id, "value") for input_id in YEAR_RANGE_START_IDS],
+            *[Input(input_id, "value") for input_id in YEAR_RANGE_END_IDS],
+            Input(SINGLE_MAP_VIEW_TOGGLE_ID, "value"),
+            Input(COMPARE_MAP_VIEW_TOGGLE_ID, "value"),
         ],
+        State(MODE_STATE_STORE_ID, "data"),
     )
-    def sync_compare_default_ranges(
+    def remember_mode_state(
         selected_mode: str,
         compare_count: int,
-    ) -> List:
-        if selected_mode != "compare":
-            return [no_update] * (
-                len(YEAR_RANGE_START_IDS)
-                + len(YEAR_RANGE_END_IDS)
-                + len(COMPARE_YEAR_SLIDER_IDS)
-            )
+        single_year_mode: str,
+        single_year: int,
+        compare_year_1: int,
+        compare_year_2: int,
+        compare_year_3: int,
+        compare_year_4: int,
+        start_year_1: int,
+        start_year_2: int,
+        start_year_3: int,
+        start_year_4: int,
+        end_year_1: int,
+        end_year_2: int,
+        end_year_3: int,
+        end_year_4: int,
+        single_map_view: str,
+        compare_map_view: str,
+        stored_state: Optional[dict],
+    ) -> List[object]:
+        state_data = normalize_mode_state_data(stored_state, min_year)
+        target_key = mode_state_key(selected_mode, compare_count)
+        previous_key = state_data["active_key"]
+        current_snapshot = capture_mode_snapshot(
+            single_year_mode,
+            single_year,
+            [compare_year_1, compare_year_2, compare_year_3, compare_year_4],
+            [start_year_1, start_year_2, start_year_3, start_year_4],
+            [end_year_1, end_year_2, end_year_3, end_year_4],
+            single_map_view,
+            compare_map_view,
+        )
 
-        defaults = COMPARE_YEAR_RANGE_DEFAULTS.get(
-            visible_range_count(selected_mode, compare_count),
-            COMPARE_YEAR_RANGE_DEFAULTS[4],
+        should_restore = (
+            ctx.triggered_id in {MODE_FILTER_ID, COMPARE_COUNT_FILTER_ID}
+            and previous_key != target_key
         )
-        single_year_defaults = COMPARE_YEAR_DEFAULTS.get(
-            visible_range_count(selected_mode, compare_count),
-            COMPARE_YEAR_DEFAULTS[4],
+        state_key_to_save = previous_key if should_restore else target_key
+        state_data["states"][state_key_to_save] = normalize_mode_snapshot(
+            current_snapshot,
+            state_data["states"][state_key_to_save],
         )
+        state_data["active_key"] = target_key
+
+        restore_payload = no_update
+        if should_restore:
+            restore_payload = {
+                "active_key": target_key,
+                "state": state_data["states"][target_key],
+            }
+
+        if stored_state == state_data:
+            return [no_update, restore_payload]
+        return [state_data, restore_payload]
+
+    @app.callback(
+        [
+            Output(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            Output(SINGLE_YEAR_SLIDER_ID, "value"),
+            *[Output(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+            *[Output(input_id, "value") for input_id in YEAR_RANGE_START_IDS],
+            *[Output(input_id, "value") for input_id in YEAR_RANGE_END_IDS],
+            Output(SINGLE_MAP_VIEW_TOGGLE_ID, "value"),
+            Output(COMPARE_MAP_VIEW_TOGGLE_ID, "value"),
+        ],
+        [
+            Input(MODE_RESTORE_STORE_ID, "data"),
+        ],
+    )
+    def restore_mode_state(restore_payload: Optional[dict]) -> List[object]:
+        if not restore_payload or not isinstance(restore_payload.get("state"), dict):
+            raise PreventUpdate
+
+        active_key = restore_payload.get("active_key")
+        restored_state = restore_payload["state"]
+        single_map_view = (
+            restored_state["single_map_view"]
+            if active_key == "single"
+            else no_update
+        )
+        compare_map_view = (
+            restored_state["compare_map_view"]
+            if active_key != "single"
+            else no_update
+        )
+
         return [
-            *[start_year for start_year, _end_year in defaults],
-            *[end_year for _start_year, end_year in defaults],
-            *single_year_defaults,
+            restored_state["single_year_mode"],
+            restored_state["single_year"],
+            *restored_state["compare_years"],
+            *restored_state["range_starts"],
+            *restored_state["range_ends"],
+            single_map_view,
+            compare_map_view,
         ]
 
     @app.callback(

@@ -42,6 +42,8 @@ TOP_5_ATTACK_TYPE_GRAPH_ID = "top-5-attack-type-graph"
 TOP_5_TARGET_TYPE_GRAPH_ID = "top-5-target-type-graph"
 VIEWPORT_WIDTH_INTERVAL_ID = "viewport-width-interval"
 VIEWPORT_WIDTH_STORE_ID = "viewport-width-store"
+MODE_STATE_STORE_ID = "mode-state-store"
+MODE_RESTORE_STORE_ID = "mode-restore-store"
 
 YEAR_RANGE_START_IDS = [
     "year-range-1-start",
