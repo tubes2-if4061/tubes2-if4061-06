@@ -44,6 +44,8 @@ VIEWPORT_WIDTH_INTERVAL_ID = "viewport-width-interval"
 VIEWPORT_WIDTH_STORE_ID = "viewport-width-store"
 MODE_STATE_STORE_ID = "mode-state-store"
 MODE_RESTORE_STORE_ID = "mode-restore-store"
+COMPARE_DETAIL_TRANSFER_STORE_ID = "compare-detail-transfer-store"
+COMPARE_MAP_DETAIL_BUTTON_TYPE = "compare-map-detail-button"
 
 YEAR_RANGE_START_IDS = [
     "year-range-1-start",

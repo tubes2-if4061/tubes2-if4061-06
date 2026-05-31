@@ -1,21 +1,25 @@
 from flask import app
 
-from dash import Dash, Input, Output, State, dcc, html, no_update, ctx
+from dash import ALL, Dash, Input, Output, State, dcc, html, no_update, ctx
 from dash.exceptions import PreventUpdate
 import pandas as pd
 from typing import Any, Optional, List, Tuple
 from plotly.graph_objs import Figure
+from uuid import uuid4
 
 from .components.filter import COMPARE_YEAR_DEFAULTS, COMPARE_YEAR_RANGE_DEFAULTS
 from .components.map import (
     build_choropleth_map,
     build_top_5_attack_type_line_graph,
     build_top_5_target_type_line_graph,
+    compare_map_detail_button,
     build_country_detail_content,
     build_country_sankey,
 )
 from .ids import (
+    COMPARE_DETAIL_TRANSFER_STORE_ID,
     COMPARE_MAPS_CONTAINER_ID,
+    COMPARE_MAP_DETAIL_BUTTON_TYPE,
     COMPARE_MAP_VIEW_TOGGLE_ID,
     COMPARE_MODE_LAYOUT_ID,
     COUNTRY_DETAIL_CLOSE_BUTTON_ID,
@@ -97,6 +101,7 @@ def default_mode_snapshot(compare_count: int, min_year: int) -> dict[str, Any]:
 def default_mode_state_data(min_year: int) -> dict[str, Any]:
     return {
         "active_key": "compare-4",
+        "last_transfer_id": None,
         "states": {
             "single": default_mode_snapshot(4, min_year),
             "compare-2": default_mode_snapshot(2, min_year),
@@ -179,8 +184,17 @@ def normalize_mode_state_data(raw_data: Any, min_year: int) -> dict[str, Any]:
         if isinstance(raw_data, dict) and raw_data.get("active_key") in states
         else default_data["active_key"]
     )
+    last_transfer_id = (
+        raw_data.get("last_transfer_id")
+        if isinstance(raw_data, dict)
+        else default_data["last_transfer_id"]
+    )
 
-    return {"active_key": active_key, "states": states}
+    return {
+        "active_key": active_key,
+        "last_transfer_id": last_transfer_id,
+        "states": states,
+    }
 
 
 def capture_mode_snapshot(
@@ -201,6 +215,33 @@ def capture_mode_snapshot(
         "single_map_view": single_map_view,
         "compare_map_view": compare_map_view,
     }
+
+
+def apply_transfer_to_single_snapshot(
+    single_snapshot: dict[str, Any],
+    transfer_request: dict[str, Any],
+) -> dict[str, Any]:
+    next_snapshot = {
+        **single_snapshot,
+        "compare_years": list(single_snapshot["compare_years"]),
+        "range_starts": list(single_snapshot["range_starts"]),
+        "range_ends": list(single_snapshot["range_ends"]),
+    }
+    period_mode = transfer_request.get("single_year_mode")
+
+    if period_mode == "slider":
+        year = transfer_request["single_year"]
+        next_snapshot["single_year_mode"] = "slider"
+        next_snapshot["single_year"] = year
+        next_snapshot["range_starts"][0] = year
+        next_snapshot["range_ends"][0] = year
+        return next_snapshot
+
+    next_snapshot["single_year_mode"] = "range"
+    next_snapshot["single_year"] = transfer_request["range_start"]
+    next_snapshot["range_starts"][0] = transfer_request["range_start"]
+    next_snapshot["range_ends"][0] = transfer_request["range_end"]
+    return next_snapshot
 
 
 def fallback_year(value: Optional[int], fallback: int) -> int:
@@ -340,18 +381,27 @@ def build_maps_section(
             graph_height,
             selected_map_view,
         )
+        panel_children = [
+            dcc.Graph(
+                id=f"{graph_id_prefix}-{index}",
+                figure=figure,
+                className="choropleth-map",
+                config={"displayModeBar": True, "displaylogo": False, "responsive": True},
+                style={"height": f"{graph_height}px", "width": "100%"},
+            ),
+        ]
+        if graph_id_prefix == "compare-map":
+            panel_children.append(
+                html.Div(
+                    className="map-panel-actions",
+                    children=compare_map_detail_button(index - 1),
+                )
+            )
+
         maps.append(
             html.Div(
                 className="map-panel",
-                children=[
-                    dcc.Graph(
-                        id=f"{graph_id_prefix}-{index}",
-                        figure=figure,
-                        className="choropleth-map",
-                        config={"displayModeBar": True, "displaylogo": False, "responsive": True},
-                        style={"height": f"{graph_height}px", "width": "100%"},
-                    ),
-                ],
+                children=panel_children,
             )
         )
 
@@ -455,6 +505,109 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
 
     @app.callback(
         [
+            Output(MODE_FILTER_ID, "value"),
+            Output(COMPARE_DETAIL_TRANSFER_STORE_ID, "data"),
+        ],
+        [
+            Input(
+                {"type": COMPARE_MAP_DETAIL_BUTTON_TYPE, "index": ALL},
+                "n_clicks",
+            ),
+        ],
+        [
+            State(MODE_FILTER_ID, "value"),
+            State(COMPARE_COUNT_FILTER_ID, "value"),
+            State(SINGLE_YEAR_MODE_FILTER_ID, "value"),
+            *[State(slider_id, "value") for slider_id in COMPARE_YEAR_SLIDER_IDS],
+            *[State(input_id, "value") for input_id in YEAR_RANGE_START_IDS],
+            *[State(input_id, "value") for input_id in YEAR_RANGE_END_IDS],
+        ],
+        prevent_initial_call=True,
+    )
+    def request_compare_map_detail(
+        _detail_clicks: List[int],
+        selected_mode: str,
+        compare_count: int,
+        single_year_mode: str,
+        compare_year_1: int,
+        compare_year_2: int,
+        compare_year_3: int,
+        compare_year_4: int,
+        start_year_1: int,
+        start_year_2: int,
+        start_year_3: int,
+        start_year_4: int,
+        end_year_1: int,
+        end_year_2: int,
+        end_year_3: int,
+        end_year_4: int,
+    ) -> List[object]:
+        triggered_id = ctx.triggered_id
+        if selected_mode != "compare" or not isinstance(triggered_id, dict):
+            raise PreventUpdate
+
+        map_index = int(triggered_id.get("index", -1))
+        visible_count = visible_range_count("compare", compare_count)
+        if map_index < 0 or map_index >= visible_count:
+            raise PreventUpdate
+        if not _detail_clicks or (_detail_clicks[map_index] or 0) <= 0:
+            raise PreventUpdate
+
+        transfer_id = str(uuid4())
+        compare_years = [
+            compare_year_1,
+            compare_year_2,
+            compare_year_3,
+            compare_year_4,
+        ]
+        range_starts = [
+            start_year_1,
+            start_year_2,
+            start_year_3,
+            start_year_4,
+        ]
+        range_ends = [
+            end_year_1,
+            end_year_2,
+            end_year_3,
+            end_year_4,
+        ]
+
+        if single_year_mode == "slider":
+            year = fallback_year(compare_years[map_index], min_year)
+            transfer_request = {
+                "id": transfer_id,
+                "single_year_mode": "slider",
+                "single_year": year,
+                "range_start": year,
+                "range_end": year,
+            }
+        else:
+            range_start = fallback_year(range_starts[map_index], min_year)
+            range_end = fallback_year(range_ends[map_index], max_year)
+            validation_messages, _invalid_start_indices, _invalid_end_indices = (
+                validate_year_ranges(
+                    [(range_start, range_end)],
+                    1,
+                    min_year,
+                    max_year,
+                )
+            )
+            if validation_messages:
+                raise PreventUpdate
+
+            transfer_request = {
+                "id": transfer_id,
+                "single_year_mode": "range",
+                "single_year": range_start,
+                "range_start": range_start,
+                "range_end": range_end,
+            }
+
+        return ["single", transfer_request]
+
+    @app.callback(
+        [
             Output(MODE_STATE_STORE_ID, "data"),
             Output(MODE_RESTORE_STORE_ID, "data"),
         ],
@@ -468,6 +621,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             *[Input(input_id, "value") for input_id in YEAR_RANGE_END_IDS],
             Input(SINGLE_MAP_VIEW_TOGGLE_ID, "value"),
             Input(COMPARE_MAP_VIEW_TOGGLE_ID, "value"),
+            Input(COMPARE_DETAIL_TRANSFER_STORE_ID, "data"),
         ],
         State(MODE_STATE_STORE_ID, "data"),
     )
@@ -490,6 +644,7 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
         end_year_4: int,
         single_map_view: str,
         compare_map_view: str,
+        transfer_request: Optional[dict],
         stored_state: Optional[dict],
     ) -> List[object]:
         state_data = normalize_mode_state_data(stored_state, min_year)
@@ -505,8 +660,14 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             compare_map_view,
         )
 
+        pending_transfer = (
+            target_key == "single"
+            and isinstance(transfer_request, dict)
+            and transfer_request.get("id") != state_data.get("last_transfer_id")
+        )
         should_restore = (
-            ctx.triggered_id in {MODE_FILTER_ID, COMPARE_COUNT_FILTER_ID}
+            pending_transfer
+            or ctx.triggered_id in {MODE_FILTER_ID, COMPARE_COUNT_FILTER_ID}
             and previous_key != target_key
         )
         state_key_to_save = previous_key if should_restore else target_key
@@ -514,6 +675,12 @@ def register_callbacks(app: Dash, data: pd.DataFrame) -> None:
             current_snapshot,
             state_data["states"][state_key_to_save],
         )
+        if pending_transfer:
+            state_data["states"]["single"] = apply_transfer_to_single_snapshot(
+                state_data["states"]["single"],
+                transfer_request,
+            )
+            state_data["last_transfer_id"] = transfer_request.get("id")
         state_data["active_key"] = target_key
 
         restore_payload = no_update

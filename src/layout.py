@@ -7,6 +7,7 @@ from .components.map import attack_legend, compare_map_component, single_map_com
 from .components.title import title_component
 from .ids import (
     COMPARE_MODE_LAYOUT_ID,
+    COMPARE_DETAIL_TRANSFER_STORE_ID,
     COUNTRY_DETAIL_CLOSE_BUTTON_ID,
     COUNTRY_SANKEY_ID,
     COUNTRY_SANKEY_SECTION_ID,
@@ -166,6 +167,7 @@ def create_layout(data: pd.DataFrame) -> html.Div:
                                     dcc.Store(id=VIEWPORT_WIDTH_STORE_ID),
                                     dcc.Store(id=MODE_STATE_STORE_ID, storage_type="memory"),
                                     dcc.Store(id=MODE_RESTORE_STORE_ID, storage_type="memory"),
+                                    dcc.Store(id=COMPARE_DETAIL_TRANSFER_STORE_ID, storage_type="memory"),
                                     dcc.Interval(
                                         id=VIEWPORT_WIDTH_INTERVAL_ID,
                                         interval=1000,

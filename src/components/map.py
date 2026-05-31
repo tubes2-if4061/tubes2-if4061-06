@@ -6,6 +6,7 @@ from plotly.graph_objs import Figure
 from typing import List, Tuple
 
 from ..ids import (
+    COMPARE_MAP_DETAIL_BUTTON_TYPE,
     COMPARE_MAPS_CONTAINER_ID,
     COMPARE_MAP_VIEW_TOGGLE_ID,
     SINGLE_MAPS_CONTAINER_ID,
@@ -257,6 +258,16 @@ def build_choropleth_map(
     )
 
     return figure
+
+
+def compare_map_detail_button(map_index: int) -> html.Button:
+    return html.Button(
+        "Lihat Detail",
+        id={"type": COMPARE_MAP_DETAIL_BUTTON_TYPE, "index": map_index},
+        className="compare-map-detail-button",
+        type="button",
+        n_clicks=0,
+    )
 
 
 def build_country_sankey(
