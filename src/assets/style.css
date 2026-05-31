@@ -2172,22 +2172,21 @@ body {
 .compare-map-section .compare-map-detail-button {
     appearance: none;
     min-height: 36px;
-    padding: 0 18px;
-    border: 1px solid rgba(251, 106, 74, 0.58);
+    padding: 0 16px;
+    border: 1px solid rgba(251, 106, 74, 0.32);
     border-radius: 999px;
-    background:
-        linear-gradient(180deg, rgba(178, 34, 34, 0.88), rgba(105, 12, 22, 0.92));
-    color: #ffffff;
+    background: rgba(15, 24, 39, 0.92);
+    color: rgba(255, 255, 255, 0.88);
     box-shadow:
-        0 10px 22px rgba(0, 0, 0, 0.28),
-        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        0 8px 18px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
     cursor: pointer;
     font: inherit;
     font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.45px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
     line-height: 1;
-    text-transform: uppercase;
+    text-transform: none;
     transition:
         transform 140ms ease,
         border-color 140ms ease,
@@ -2196,13 +2195,13 @@ body {
 }
 
 .compare-map-section .compare-map-detail-button:hover {
-    border-color: rgba(251, 106, 74, 0.9);
-    background:
-        linear-gradient(180deg, rgba(206, 48, 48, 0.96), rgba(128, 17, 28, 0.98));
+    border-color: rgba(251, 106, 74, 0.58);
+    background: rgba(31, 43, 65, 0.96);
+    color: #ffffff;
     box-shadow:
-        0 12px 26px rgba(0, 0, 0, 0.34),
-        0 0 0 3px rgba(251, 106, 74, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        0 10px 22px rgba(0, 0, 0, 0.26),
+        0 0 0 3px rgba(251, 106, 74, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform: translateY(-1px);
 }
 

@@ -229,7 +229,7 @@ def filter_component(df: pd.DataFrame) -> html.Div:
                             dcc.RadioItems(
                                 id=MODE_FILTER_ID,
                                 options=[
-                                    {"label": "Single", "value": "single"},
+                                    {"label": "Details", "value": "single"},
                                     {"label": "Compare", "value": "compare"},
                                 ],
                                 value="compare",
