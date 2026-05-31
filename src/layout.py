@@ -86,6 +86,16 @@ def create_layout(data: pd.DataFrame) -> html.Div:
     return html.Div(
         className="app-shell",
         children=[
+            html.Img(
+                src="/assets/itb_logo.png",
+                className="corner-logo",
+                alt="ITB",
+            ),
+            html.Div("Kelompok 6", className="corner-group-label"),
+            html.Div(
+                "Source: Global Terrorism Database",
+                className="source-label",
+            ),
             html.Div(
                 className="app-layout",
                 children=[
